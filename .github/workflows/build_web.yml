@@ -38,8 +38,13 @@ jobs:
           npm ci
           npm run build
 
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact_wrap
+          cp -r dist artifact_wrap/
+
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: dist/
+          path: artifact_wrap/
