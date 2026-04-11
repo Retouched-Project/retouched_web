@@ -9,6 +9,8 @@ jobs:
   build_web:
     name: Build WASM and Web Bundles
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
