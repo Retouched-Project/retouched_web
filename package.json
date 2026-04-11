@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npx --package typescript tsc -b && vite build",
     "build:proto": "protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/bmrender/proto --proto_path=./src/bmrender/proto ./src/bmrender/proto/scheme.proto --ts_proto_opt=esModuleInterop=true,env=browser",
     "lint": "eslint .",
     "preview": "vite preview"

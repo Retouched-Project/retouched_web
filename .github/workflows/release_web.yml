@@ -1,8 +1,9 @@
-name: Build Web
+name: Release Web
 
 on:
-  pull_request:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build_web:
@@ -37,3 +38,16 @@ jobs:
         run: |
           npm ci
           npm run build
+
+      - name: Package Dist
+        run: |
+          cd dist
+          zip -r ../retouched_web_release.zip .
+          cd ..
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: retouched_web_release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
