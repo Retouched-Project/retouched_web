@@ -25,7 +25,7 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: cargo install wasm-pack
 
       - name: Clone Bronze Monkey
         run: git clone https://github.com/Retouched-Project/bronze-monkey.git ../bronze_monkey
@@ -40,10 +40,7 @@ jobs:
           npm run build
 
       - name: Package Dist
-        run: |
-          cd dist
-          zip -r ../retouched_web_release.zip .
-          cd ..
+        run: zip -r retouched_web_release.zip dist/
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
