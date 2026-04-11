@@ -1,0 +1,219 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Copyright(C) 2026 ddavef/KinteLiX retouched_web */
+
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #000;
+  color: #fff;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.app-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-ui {
+  background-color: #121212;
+}
+
+.app-header {
+  background-color: #1e1e1e;
+  padding-top: max(env(safe-area-inset-top), 0px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+:fullscreen .app-header {
+  padding-top: 0;
+}
+
+.logo {
+  text-align: center;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-img {
+  height: 36px;
+  width: auto;
+}
+
+.tab-bar {
+  display: flex;
+  width: 100%;
+}
+
+.tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.0px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  outline: none;
+}
+
+.tab::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 5px;
+  right: 5px;
+  background-color: transparent;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  z-index: 0;
+}
+
+.tab:hover::before {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.tab:active::before {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.tab-label {
+  padding: 14px 0;
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s;
+}
+
+.tab.active .tab-label {
+  color: #2196F3;
+}
+
+.m3-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.m3-switch.active {
+  background-color: #7c4dff;
+  border: 2px solid #7c4dff;
+}
+
+.m3-switch.inactive {
+  background-color: transparent;
+  border: 2px solid #8e8e8e;
+}
+
+.m3-thumb {
+  position: absolute;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
+    width 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
+    height 0.2s cubic-bezier(0.4, 0.0, 0.2, 1),
+    background-color 0.2s,
+    left 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.m3-switch.active .m3-thumb {
+  transform: translateX(24px);
+  width: 24px;
+  height: 24px;
+  background-color: #E8DEF8;
+}
+
+.m3-switch.inactive .m3-thumb {
+  transform: translateX(6px);
+  width: 16px;
+  height: 16px;
+  background-color: #8e8e8e;
+}
+
+.m3-switch.active:active .m3-thumb {
+  width: 28px;
+  transform: translateX(20px);
+}
+
+.m3-switch.inactive:active .m3-thumb {
+  width: 28px;
+}
+
+.tab-content-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background-color: #000;
+  width: 100%;
+}
+
+.tab-swipe-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  will-change: transform;
+}
+
+.tab-pane {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

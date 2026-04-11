@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 ddavef/KinteLiX
+
+syntax = "proto3";
+
+package controls;
+
+message ControlScheme {
+  string version = 1;
+  string orientation = 2; // "portrait" or "landscape"
+  optional bool touch_enabled = 3;
+  optional bool accelerometer_enabled = 4;
+  optional int32 width = 5;
+  optional int32 height = 6;
+  repeated AppResource resources = 7;
+  repeated DisplayObject display_objects = 8;
+  repeated ContextMenuOption options = 9;
+}
+
+message AppResource {
+  int32 id = 1;
+  bytes bitmap = 2;
+}
+
+message DisplayObject {
+  int32 id = 1;
+  string type = 2;
+  float top = 3;
+  float left = 4;
+  float width = 5;
+  float height = 6;
+  string function_handler = 7;
+  bool hidden = 8;
+
+  bool has_hit_rect = 9;
+  optional float hit_top = 10;
+  optional float hit_left = 11;
+  optional float hit_width = 12;
+  optional float hit_height = 13;
+
+  string text = 14;
+  optional float text_size = 15;
+  optional int32 color = 16;
+  string sampling_mode = 17; // "linear" or "nearest"
+  optional float deadzone = 18;
+  optional bool radial = 19;
+
+  repeated ControlAsset assets = 20;
+}
+
+message ControlAsset {
+  string name = 1;
+  int32 resource_ref = 2;
+}
+
+message ContextMenuOption {
+  int32 icon_res_id = 1;
+  string title = 2;
+  string event = 3;
+  bool close_on_select = 4;
+}

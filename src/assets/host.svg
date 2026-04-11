@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100.00005mm"
+   height="118.50777mm"
+   viewBox="0 0 100.00005 118.50777"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="host.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.4286771"
+     inkscape:cx="113.39161"
+     inkscape:cy="217.6839"
+     inkscape:window-width="2560"
+     inkscape:window-height="1362"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-54.999979,-98.499982)">
+    <rect
+       style="font-variation-settings:'opsz' 32, 'wght' 500;fill:none;fill-rule:evenodd;stroke:#bfbfbf;stroke-width:10.1274;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="frame"
+       width="89.872643"
+       height="89.872643"
+       x="60.063679"
+       y="103.56368"
+       rx="5.1707411"
+       ry="4.958817" />
+    <rect
+       style="font-variation-settings:'opsz' 32, 'wght' 500;fill:#bfbfbf;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="stand_middle"
+       width="23.833008"
+       height="17.285713"
+       x="93.083496"
+       y="193.43633" />
+    <rect
+       style="font-variation-settings:'opsz' 32, 'wght' 500;fill:#bfbfbf;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:8.50746;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="stand"
+       width="71.969078"
+       height="14.92857"
+       x="69.015465"
+       y="202.07918"
+       rx="4.2537308"
+       ry="4.2537308" />
+    <rect
+       style="font-variation-settings:'opsz' 32, 'wght' 500;fill:#252125;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.12317;stroke-linecap:square;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       id="screen"
+       width="77.876831"
+       height="77.876831"
+       x="66.061584"
+       y="109.56159" />
+  </g>
+</svg>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="673.56671"
+   height="551.96558"
+   viewBox="0 0 431.0827 353.25797"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="menu_sound_on.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.0023239"
+     inkscape:cx="199.5363"
+     inkscape:cy="284.33922"
+     inkscape:window-width="2560"
+     inkscape:window-height="1362"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="sound_icon_on" />
+  <title
+     id="title1">sound-loud-filled</title>
+  <g
+     id="sound_icon_on"
+     stroke="none"
+     stroke-width="1"
+     fill="none"
+     fill-rule="evenodd"
+     transform="translate(-40.259705,-80.351964)">
+    <path
+       d="m 234.50688,0 110.85419,87.229227 h 80.89578 V 257.89589 h -81.0208 l -110.72917,85.45835 z"
+       id="speaker"
+       style="fill:#6b6781;fill-opacity:1;stroke:#000000;stroke-width:4.8378;stroke-dasharray:none;stroke-opacity:1"
+       transform="translate(42.666667,85.333331)" />
+    <path
+       d="m 149.344,69.77216 33.32416,26.658773 c -39.79563,42.567677 -39.79435,108.443947 -0.001,151.011627 L 149.343,274.10133 C 97.138346,215.88011 97.138346,127.99211 149.344,69.77216 Z"
+       id="wave_inner"
+       style="fill:#ffca44;fill-opacity:1;stroke:#ce0044;stroke-width:4.8378;stroke-dasharray:none;stroke-opacity:1"
+       transform="translate(42.666667,85.333331)" />
+    <path
+       d="M 64.95744,341.61067 98.24256,314.98176 C 24.04992,233.90613 24.04992,109.96608 98.24384,28.890667 L 64.95872,2.26304 c -86.612054,96.71232 -86.610774,242.63531 -0.0013,339.34763 z"
+       id="wave_outer"
+       style="fill:#ffca44;fill-opacity:1;stroke:#ce0044;stroke-width:4.8378;stroke-dasharray:none;stroke-opacity:1"
+       transform="translate(42.666667,85.333331)" />
+  </g>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>sound-loud-filled</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

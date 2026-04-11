@@ -1,0 +1,50 @@
+name: Retouched Web Release CI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build_web:
+    name: Build WASM and Web Bundles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Clone Bronze Monkey
+        run: git clone https://github.com/Retouched-Project/bronze-monkey.git ../bronze_monkey
+
+      - name: Build WASM
+        run: wasm-pack build --target web --out-dir ${{ github.workspace }}/src/wasm --release
+        working-directory: ../bronze_monkey
+
+      - name: Build Web App
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package Dist
+        run: zip -r retouched_web_release.zip dist/
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: retouched_web_release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
