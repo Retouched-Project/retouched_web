@@ -8,6 +8,9 @@
 # Retouched Web
 A Brass Monkey compatible React controller app. 
 
+## Known Bugs
+- In BC Bow Contest the X button to close the weapons menu is hard to trigger.
+
 ## License
 This project is licensed under the AGPL-3.0 License.  
 See the [LICENSE](LICENSE) file for details.
