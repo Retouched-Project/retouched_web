@@ -6,6 +6,7 @@ import './App.css'
 import logo from './assets/retouched_logo_text.svg'
 import { bmEngine } from "./bmEngine";
 import { GameClient } from './gameClient';
+import { SensorProcessor } from './core/sensorProcessor';
 import type { BmRegistryInfo } from './types';
 import { GameSessionView } from './GameSessionView';
 import { GamesTab } from './tabs/GamesTab';
@@ -59,6 +60,16 @@ function App() {
   const isHorizontalDrag = useRef<boolean | null>(null);
 
   const joinLockRef = useRef<boolean>(false);
+
+  const needsSensorPermission = SensorProcessor.needsPermissionRequest();
+  const [sensorPermissionGranted, setSensorPermissionGranted] = useState<boolean | null>(
+    SensorProcessor.isPermissionGranted()
+  );
+
+  const handleRequestSensorPermission = useCallback(async () => {
+    const granted = await SensorProcessor.requestPermission();
+    setSensorPermissionGranted(granted);
+  }, []);
 
   const doConnect = useCallback(async () => {
     if (gameClientRef.current) {
@@ -306,6 +317,9 @@ function App() {
               onJoinGame={handleJoinGame}
               error={error}
               gamePort={gamePort}
+              needsSensorPermission={needsSensorPermission}
+              sensorPermissionGranted={sensorPermissionGranted}
+              onRequestSensorPermission={handleRequestSensorPermission}
             />
           </div>
           <div className="tab-pane">

@@ -21,7 +21,7 @@ export class SchemeService {
         let scheme: ControlScheme | null = null;
         let xml: string | null = null;
         try {
-            try { xml = new TextDecoder().decode(action.blob); } catch { }
+            try { xml = new TextDecoder().decode(action.blob); } catch { /* invalid utf-8 */ }
             if (xml && xml.includes('<BMApplicationScheme')) {
                 const pb = this.engine.parseControlSchemeXml(xml);
                 if (pb.length > 0) scheme = ControlScheme.decode(pb);

@@ -188,7 +188,7 @@ export class GameClient {
                     this.disconnectGame();
                     return true;
                 }
-            } catch { }
+            } catch { /* not a game message */ }
         }
         return false;
     }
@@ -215,9 +215,6 @@ export class GameClient {
     }
 
     async joinGame(game: BmRegistryInfo) {
-        if (SensorProcessor.needsPermissionRequest()) {
-            await SensorProcessor.requestPermission();
-        }
         this.protocol.resetFramer('game');
         this.gameHandshakeReceived = false;
         this.session.joinGame(game, this.selfInfo);

@@ -30,8 +30,7 @@ export class RegistryClient {
                         return true;
                     }
                 }
-            } catch {
-            }
+            } catch { /* not a registry message */ }
         }
         return false;
     }

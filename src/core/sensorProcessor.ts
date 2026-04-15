@@ -37,6 +37,10 @@ export class SensorProcessor {
         this.processActions = processActions;
     }
 
+    static isPermissionGranted(): boolean | null {
+        return SensorProcessor.permissionGranted;
+    }
+
     static needsPermissionRequest(): boolean {
         return typeof DeviceMotionEvent !== 'undefined' &&
             typeof (DeviceMotionEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission === 'function';

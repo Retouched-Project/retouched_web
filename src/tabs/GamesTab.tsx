@@ -17,6 +17,9 @@ interface GamesTabProps {
     onJoinGame: (game: BmRegistryInfo) => void;
     error?: string;
     gamePort: number;
+    needsSensorPermission: boolean;
+    sensorPermissionGranted: boolean | null;
+    onRequestSensorPermission: () => void;
 }
 
 const BadgedIcon: React.FC<{ mainSrc: string; positive: boolean }> = ({ mainSrc, positive }) => (
@@ -37,17 +40,49 @@ const BackgroundIcons: React.FC<{ connected: boolean; hasGames: boolean }> = ({ 
     </div>
 );
 
+const SensorPermissionButton: React.FC<{
+    granted: boolean | null;
+    onRequest: () => void;
+}> = ({ granted, onRequest }) => {
+    const isGranted = granted === true;
+    return (
+        <div style={styles.sensorPermissionBar}>
+            <button
+                onClick={onRequest}
+                disabled={isGranted}
+                style={{
+                    ...styles.button,
+                    backgroundColor: isGranted ? '#222' : '#333',
+                    color: isGranted ? '#4caf50' : 'white',
+                    opacity: isGranted ? 0.7 : 1,
+                    width: '90%',
+                    maxWidth: 400,
+                }}
+            >
+                {isGranted ? 'Motion sensors enabled' : 'Enable motion sensors'}
+            </button>
+        </div>
+    );
+};
+
 export const GamesTab: React.FC<GamesTabProps> = ({
     connected,
     connecting,
     gameInfos,
     onJoinGame,
     error,
-    gamePort
+    gamePort,
+    needsSensorPermission,
+    sensorPermissionGranted,
+    onRequestSensorPermission,
 }) => {
     console.log("Current Game Port:", gamePort);
 
     const hasGames = gameInfos.length > 0;
+
+    const sensorButton = needsSensorPermission && (
+        <SensorPermissionButton granted={sensorPermissionGranted} onRequest={onRequestSensorPermission} />
+    );
 
     if (error) {
         return (
@@ -64,6 +99,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                         Retry
                     </button>
                 </div>
+                {sensorButton}
             </div>
         );
     }
@@ -76,6 +112,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                     <div className="spinner" style={styles.spinner}></div>
                     <p style={{ color: '#aaa', marginTop: 10 }}>Connecting to server...</p>
                 </div>
+                {sensorButton}
             </div>
         );
     }
@@ -89,6 +126,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                         Reconnect
                     </button>
                 </div>
+                {sensorButton}
             </div>
         );
     }
@@ -97,6 +135,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
         return (
             <div style={styles.tabRoot}>
                 <BackgroundIcons connected={connected} hasGames={hasGames} />
+                {sensorButton}
             </div>
         );
     }
@@ -136,6 +175,9 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                     </div>
                 ))}
             </div>
+            {needsSensorPermission && (
+                <SensorPermissionButton granted={sensorPermissionGranted} onRequest={onRequestSensorPermission} />
+            )}
         </div>
     );
 };
@@ -310,5 +352,14 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    sensorPermissionBar: {
+        position: 'absolute' as const,
+        bottom: 80,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        zIndex: 2,
     },
 };
