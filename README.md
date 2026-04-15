@@ -26,4 +26,7 @@ The menu_sound_on.svg and menu_sound_off.svg icons are originally from Industria
 licensed under the MIT License.   
 
 The menu_reset.svg icon is originally from Instructure UI Filled Interface Icons,
-licensed under the MIT License.
+licensed under the MIT License.   
+
+The server.svg icon is originally from Dripicons Line Icons by Amit Jakhu,
+licensed under the [CC Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
