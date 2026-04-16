@@ -10,6 +10,7 @@ A Brass Monkey compatible React controller app.
 
 ## Known Bugs
 - In BC Bow Contest the X button to close the weapons menu is hard to trigger.
+- The D-Pad can be dragged even if the finger is off the game view -> Unfaithful to Touchy.
 
 ## License
 This project is licensed under the AGPL-3.0 License.  
