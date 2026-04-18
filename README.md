@@ -8,6 +8,12 @@
 # Retouched Web
 A Brass Monkey compatible React controller app. 
 
+## Installation
+There is no installation needed. Simply download Retouched Web from the server GUI and serve it.    
+iOS users must follow the instructions on the onboarding page and is recommended for Android users too.    
+The root CA certificate has to be installed because HTTPS is needed for sensor access.    
+On Android it is possible to bypass the HTTPS warning but iOS is more restrictive.
+
 ## Known Bugs
 - In BC Bow Contest the X button to close the weapons menu is hard to trigger.
 - The D-Pad can be dragged even if the finger is off the game view -> Unfaithful to Touchy.
