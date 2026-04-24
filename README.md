@@ -3,7 +3,7 @@
 </p>
 
 > [!NOTE]
-> **This is not an officially supported Ntrome Ltd. or Infrared5 Inc. product.**
+> **This is not an officially supported Nitrome Ltd. or Infrared5 Inc. product.**
 
 # Retouched Web
 A Brass Monkey compatible React controller app. 
