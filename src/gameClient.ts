@@ -170,9 +170,21 @@ export class GameClient {
         }
     }
 
+    private isHandlingPolicy = false;
+    private policyBuffer: Uint8Array = new Uint8Array(0);
+
     private handlePolicyRequest(data: Uint8Array): boolean {
-        if (data.length === 23 && new TextDecoder().decode(data).startsWith('<policy-file-request/>')) {
-            this.transport.send('game', GameClient.POLICY_RESPONSE);
+        if ((data.length > 0 && data[0] === 0x3C) || this.policyBuffer.length > 0) {
+            const newBuffer = new Uint8Array(this.policyBuffer.length + data.length);
+            newBuffer.set(this.policyBuffer);
+            newBuffer.set(data, this.policyBuffer.length);
+            this.policyBuffer = newBuffer;
+
+            if (this.policyBuffer.length >= 23) {
+                this.isHandlingPolicy = true;
+                this.transport.send('game', GameClient.POLICY_RESPONSE);
+                this.policyBuffer = new Uint8Array(0);
+            }
             return true;
         }
         return false;
@@ -184,6 +196,11 @@ export class GameClient {
                 const text = new TextDecoder().decode(data);
                 const msg = JSON.parse(text);
                 if (msg.type === 'game_closed') {
+                    if (this.isHandlingPolicy) {
+                        console.log('[GameClient] Ignoring policy socket drop');
+                        this.isHandlingPolicy = false;
+                        return true;
+                    }
                     console.log('[GameClient] Game closed by server (TCP connection dropped)');
                     this.disconnectGame();
                     return true;
