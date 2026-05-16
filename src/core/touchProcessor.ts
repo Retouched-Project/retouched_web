@@ -35,7 +35,19 @@ export class TouchProcessor {
 
         this.pendingScreenW = screenWidth;
         this.pendingScreenH = screenHeight;
-        touches.forEach(t => this.pendingTouches.set(t.id, t));
+        touches.forEach(t => {
+            const existing = this.pendingTouches.get(t.id);
+            if (existing && t.state === 2) {
+                if (existing.state !== 3) {
+                    this.pendingTouches.set(t.id, { ...t, state: existing.state });
+                    return;
+                }
+                if (existing.x === t.x && existing.y === t.y) {
+                    return;
+                }
+            }
+            this.pendingTouches.set(t.id, t);
+        });
 
         const effectiveInterval = this.touchIntervalMs / 2;
         const now = Date.now();
