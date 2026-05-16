@@ -8,7 +8,7 @@ export const AboutTab: React.FC = () => {
         <div style={styles.container}>
             <img src={logo} alt="Retouched Web Logo" style={{ height: 60, marginBottom: 20 }} />
             <h2 style={{ color: '#fff', margin: 0 }}>Retouched Web</h2>
-            <p style={{ color: '#aaa', marginTop: 5 }}>Version 1.0.0</p>
+            <p style={{ color: '#aaa', marginTop: 5 }}>Version 1.0.3</p>
 
             <div style={{ height: 40 }} />
 

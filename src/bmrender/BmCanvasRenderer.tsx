@@ -230,6 +230,20 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
                 if (!target) return;
                 const rawPos = pointerPositions.current.get(pid);
                 if (!rawPos) return;
+
+                const inHit = rawPos.x >= target.hitRect.left && rawPos.x <= target.hitRect.left + target.hitRect.width &&
+                              rawPos.y >= target.hitRect.top && rawPos.y <= target.hitRect.top + target.hitRect.height;
+
+                if (!inHit) {
+                    const ds = dpadStatesRef.current.get(dpadId);
+                    if (ds?.stateIndex !== 4) {
+                        dpadStatesRef.current.set(dpadId, { stateIndex: 4, dragOffset: ds?.dragOffset ?? { x: 0, y: 0 } });
+                        sendDpadDirection(dpadId, 4);
+                        dpadChanged = true;
+                    }
+                    return;
+                }
+
                 const cx = target.hitRect.left + target.hitRect.width / 2;
                 const cy = target.hitRect.top + target.hitRect.height / 2;
                 const ds = dpadStatesRef.current.get(dpadId);
