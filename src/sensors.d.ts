@@ -74,3 +74,19 @@ declare class Magnetometer implements Sensor {
     removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     dispatchEvent(event: Event): boolean;
 }
+
+declare class AbsoluteOrientationSensor implements Sensor {
+    constructor(options?: SensorOptions);
+    readonly quaternion: ReadonlyArray<number> | null;
+    readonly activated: boolean;
+    readonly hasReading: boolean;
+    readonly timestamp: number | null;
+    start(): void;
+    stop(): void;
+    onreading: ((this: Sensor, ev: Event) => void) | null;
+    onerror: ((this: Sensor, ev: SensorErrorEvent) => void) | null;
+    onactivate: ((this: Sensor, ev: Event) => void) | null;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+    dispatchEvent(event: Event): boolean;
+}

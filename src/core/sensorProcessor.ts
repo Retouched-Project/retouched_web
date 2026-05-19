@@ -24,7 +24,9 @@ export class SensorProcessor {
     private gyroGotReading = false;
 
     private orientationEnabled = false;
+    private orientationSensor: Sensor | null = null;
     private orientationTimer: ReturnType<typeof setInterval> | null = null;
+    private lastOrientationSentAt = 0;
     private orientationIntervalMs = 50;
 
     private controlReliability = 0;
@@ -220,7 +222,50 @@ export class SensorProcessor {
     }
 
     startOrientation(targetDeviceId: string) {
-        if (this.orientationTimer) return;
+        if (this.orientationSensor || this.orientationTimer) return;
+
+        if (SensorProcessor.permissionGranted === false) {
+            this.onStatusChange?.('permission_denied');
+            return;
+        }
+
+        if (typeof AbsoluteOrientationSensor !== 'undefined') {
+            try {
+                const s = new AbsoluteOrientationSensor({ frequency: 60 });
+                let baselineInv: [number, number, number, number] | null = null;
+                s.onreading = () => {
+                    const q = s.quaternion;
+                    if (!q || q.length < 4) return;
+                    if (!baselineInv) {
+                        // Magic math to make sure orientation is zeroed, and not always facing true north.
+                        baselineInv = [-q[0], -q[1], -q[2], q[3]];
+                    }
+                    // I have no idea how this actually works, but it does! It's got to be one of those things that you just leave alone :)
+                    const ix = baselineInv[0], iy = baselineInv[1], iz = baselineInv[2], iw = baselineInv[3];
+                    const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
+                    const dx = iw * qx + ix * qw + iy * qz - iz * qy;
+                    const dy = iw * qy - ix * qz + iy * qw + iz * qx;
+                    const dz = iw * qz + ix * qy - iy * qx + iz * qw;
+                    const dw = iw * qw - ix * qx - iy * qy - iz * qz;
+                    const aligned = this.gridAlign(Date.now(), this.lastOrientationSentAt, this.orientationIntervalMs);
+                    if (aligned < 0) return;
+                    this.lastOrientationSentAt = aligned;
+                    this.processActions(this.engine.makeOrientation(
+                        targetDeviceId,
+                        dx, dy, dz, dw,
+                        this.controlReliability
+                    ));
+                };
+                s.start();
+                this.orientationSensor = s;
+                return;
+            } catch (e) {
+                if (!this.orientationSensor && !this.orientationTimer) {
+                    console.warn('[SensorProcessor] AbsoluteOrientationSensor API failed, falling back to accel approximation', e);
+                }
+            }
+        }
+
         this.startAccel(targetDeviceId);
         this.orientationTimer = setInterval(() => {
             if (this.orientationEnabled && this.lastAccelEvent) {
@@ -235,12 +280,18 @@ export class SensorProcessor {
     }
 
     stopOrientation() {
+        if (this.orientationSensor) {
+            this.orientationSensor.stop();
+            this.orientationSensor = null;
+        }
         if (this.orientationTimer) {
             clearInterval(this.orientationTimer);
             this.orientationTimer = null;
         }
+        this.lastOrientationSentAt = 0;
     }
 
+    // This Euler guy was a genius. This fallback will be worse though if a device needs it.
     private computeQuaternion(ax: number, ay: number, az: number): [number, number, number, number] {
         const g = Math.sqrt(ax * ax + ay * ay + az * az);
         if (g === 0) return [0, 0, 0, 1];
@@ -282,7 +333,7 @@ export class SensorProcessor {
         if (config.orientationIntervalMs !== undefined) {
             const nextInterval = Math.max(10, config.orientationIntervalMs);
             if (nextInterval !== this.orientationIntervalMs) {
-                const wasRunning = !!this.orientationTimer;
+                const wasRunning = !!(this.orientationSensor || this.orientationTimer);
                 this.orientationIntervalMs = nextInterval;
                 if (wasRunning) {
                     this.stopOrientation();
