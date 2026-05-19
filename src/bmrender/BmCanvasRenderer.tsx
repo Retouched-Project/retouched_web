@@ -27,7 +27,6 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
     pressedButtons, baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, onTouchSet,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const activeDpadPointers = useRef<Map<number, number>>(new Map());
     const pointerPositions = useRef<Map<number, { x: number; y: number }>>(new Map());
     const pointerStates = useRef<Map<number, { id: number; x: number; y: number; state: number }>>(new Map());
     const currentlyPressedRef = useRef<Set<string>>(new Set());
@@ -212,8 +211,8 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
             for (const t of hitTargetsRef.current) {
                 if (!t.functionHandler) continue;
                 for (const [, pos] of pointerPositions.current.entries()) {
-                    if (pos.x >= t.hitRect.left && pos.x <= t.hitRect.left + t.hitRect.width &&
-                        pos.y >= t.hitRect.top && pos.y <= t.hitRect.top + t.hitRect.height) {
+                    if (pos.x >= t.hitRect.left && pos.x < t.hitRect.left + t.hitRect.width &&
+                        pos.y >= t.hitRect.top && pos.y < t.hitRect.top + t.hitRect.height) {
                         currentHits.add(t.functionHandler);
                         break;
                     }
@@ -234,23 +233,27 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
             }
 
             let dpadChanged = false;
-            activeDpadPointers.current.forEach((pid, dpadId) => {
-                const target = hitTargetsRef.current.find(t => t.id === dpadId);
-                if (!target) return;
-                const rawPos = pointerPositions.current.get(pid);
-                if (!rawPos) return;
+            for (const target of hitTargetsRef.current) {
+                if (target.type !== 'dpad') continue;
+                const dpadId = target.id;
 
-                const inHit = rawPos.x >= target.hitRect.left && rawPos.x <= target.hitRect.left + target.hitRect.width &&
-                              rawPos.y >= target.hitRect.top && rawPos.y <= target.hitRect.top + target.hitRect.height;
+                let activePos: { x: number; y: number } | null = null;
+                for (const [, pos] of pointerPositions.current.entries()) {
+                    if (pos.x >= target.hitRect.left && pos.x < target.hitRect.left + target.hitRect.width &&
+                        pos.y >= target.hitRect.top && pos.y < target.hitRect.top + target.hitRect.height) {
+                        activePos = pos;
+                        break;
+                    }
+                }
 
-                if (!inHit) {
+                if (!activePos) {
                     const ds = dpadStatesRef.current.get(dpadId);
                     if (ds?.stateIndex !== 4) {
                         dpadStatesRef.current.set(dpadId, { stateIndex: 4, dragOffset: ds?.dragOffset ?? { x: 0, y: 0 } });
                         sendDpadDirection(dpadId, 4);
                         dpadChanged = true;
                     }
-                    return;
+                    continue;
                 }
 
                 const cx = target.hitRect.left + target.hitRect.width / 2;
@@ -258,15 +261,15 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
                 const ds = dpadStatesRef.current.get(dpadId);
                 const dx = ds?.dragOffset?.x ?? 0;
                 const dy = ds?.dragOffset?.y ?? 0;
-                const state = computeDpadState(rawPos.x, rawPos.y, cx + dx, cy + dy, target.visualWidth, target.obj.deadzone ?? 0.25, target.obj.radial ?? true);
+                const state = computeDpadState(activePos.x, activePos.y, cx + dx, cy + dy, target.visualWidth, target.obj.deadzone ?? 0.25, target.obj.radial ?? true);
                 const drag = floatingDpadRef.current
-                    ? computeDpadDrag(rawPos.x, rawPos.y, cx, cy, dx, dy, target.visualWidth, target.hitRect, 1.0)
+                    ? computeDpadDrag(activePos.x, activePos.y, cx, cy, dx, dy, target.visualWidth, target.hitRect, 1.0)
                     : { x: 0, y: 0 };
 
                 dpadStatesRef.current.set(dpadId, { stateIndex: state, dragOffset: drag });
                 sendDpadDirection(dpadId, state);
                 dpadChanged = true;
-            });
+            }
 
             if (dpadChanged) setDpadTick(t => t + 1);
         };
@@ -287,14 +290,6 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         const onDown = (e: PointerEvent) => {
             e.preventDefault();
             const local = toDesign(e.clientX, e.clientY);
-            for (const t of hitTargetsRef.current) {
-                if (t.type === 'dpad' &&
-                    local.x >= t.hitRect.left && local.x <= t.hitRect.left + t.hitRect.width &&
-                    local.y >= t.hitRect.top && local.y <= t.hitRect.top + t.hitRect.height) {
-                    activeDpadPointers.current.set(t.id, e.pointerId);
-                    break;
-                }
-            }
             pointerPositions.current.set(e.pointerId, local);
             pointerStates.current.set(e.pointerId, { id: e.pointerId, ...local, state: 1 });
             recalculateHits();
@@ -323,22 +318,8 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
             pointerPositions.current.delete(e.pointerId);
             pointerStates.current.set(e.pointerId, { id: e.pointerId, ...local, state: 4 });
 
-            let dpadChanged = false;
-            activeDpadPointers.current.forEach((pid, dpadId) => {
-                if (pid === e.pointerId) {
-                    const ds = dpadStatesRef.current.get(dpadId);
-                    const dragOutput = ds?.dragOffset || { x: 0, y: 0 };
-                    dpadStatesRef.current.set(dpadId, { stateIndex: 4, dragOffset: dragOutput });
-                    lastDpadSentRef.current.set(dpadId, 4);
-                    onDpadUpdateRef.current(0, 0);
-                    activeDpadPointers.current.delete(dpadId);
-                    dpadChanged = true;
-                }
-            });
-
             recalculateHits();
             flushTouch();
-            if (dpadChanged) setDpadTick(t => t + 1);
         };
 
         const noCtx = (e: Event) => e.preventDefault();
