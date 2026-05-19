@@ -17,11 +17,13 @@ export interface UnlockSliderHandle {
 interface Props {
     onUnlocked: () => void;
     unlockThreshold?: number;
+    rotated?: boolean;
 }
 
 export const UnlockSlider = forwardRef<UnlockSliderHandle, Props>(({
     onUnlocked,
     unlockThreshold = 0.9,
+    rotated = false,
 }, ref) => {
     const outerRef = useRef<HTMLDivElement>(null);
     const [dragging, setDragging] = useState(false);
@@ -52,24 +54,27 @@ export const UnlockSlider = forwardRef<UnlockSliderHandle, Props>(({
         };
     }, []);
 
+    const localAxis = useCallback((e: React.PointerEvent) => {
+        const rect = outerRef.current!.getBoundingClientRect();
+        return rotated ? (e.clientY - rect.top) : (e.clientX - rect.left);
+    }, [rotated]);
+
     const onPointerDown = useCallback((e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        const rect = outerRef.current!.getBoundingClientRect();
-        dragOffsetRef.current = (e.clientX - rect.left) - currentX;
+        dragOffsetRef.current = localAxis(e) - currentX;
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         show();
         setDragging(true);
-    }, [currentX, show]);
+    }, [currentX, show, localAxis]);
 
     const onPointerMove = useCallback((e: React.PointerEvent) => {
         if (!dragging || !outerRef.current) return;
         e.preventDefault();
         e.stopPropagation();
-        const rect = outerRef.current.getBoundingClientRect();
-        const relX = e.clientX - rect.left - dragOffsetRef.current;
+        const relX = localAxis(e) - dragOffsetRef.current;
         setHandleX(Math.max(0, Math.min(MAX_X, relX)));
-    }, [dragging]);
+    }, [dragging, localAxis]);
 
     const onPointerUp = useCallback((e: React.PointerEvent) => {
         if (!dragging) return;

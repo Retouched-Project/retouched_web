@@ -191,23 +191,39 @@ export const GameSessionView: React.FC<Props> = ({
                 forceRotate={forceRotate}
             />
 
-            {/* Unlock slider */}
-            <div style={{
+            {/* Rotation wrapper for overlays */}
+            <div style={forceRotate ? {
                 position: 'absolute',
-                top: isLandscape ? 12 : 56,
-                right: sliderRightOffset,
-                zIndex: 100,
+                top: '50%',
+                left: '50%',
+                width: viewport.h,
+                height: viewport.w,
+                transform: 'translate(-50%, -50%) rotate(90deg)',
+                pointerEvents: 'none',
+            } : {
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
             }}>
-                <UnlockSlider ref={sliderRef} onUnlocked={handleUnlocked} />
-            </div>
+                {/* Unlock slider */}
+                <div style={{
+                    position: 'absolute',
+                    top: isLandscape ? 12 : 56,
+                    right: sliderRightOffset,
+                    zIndex: 100,
+                    pointerEvents: 'auto',
+                }}>
+                    <UnlockSlider ref={sliderRef} onUnlocked={handleUnlocked} rotated={forceRotate} />
+                </div>
 
-            {/* Status banners */}
-            <StatusBanners
-                sensorStatus={sensorStatus}
-                dismissed={dismissedBanners}
-                onDismiss={(key) => setDismissedBanners(prev => new Set(prev).add(key))}
-                isLandscape={isLandscape}
-            />
+                {/* Status banners */}
+                <StatusBanners
+                    sensorStatus={sensorStatus}
+                    dismissed={dismissedBanners}
+                    onDismiss={(key) => setDismissedBanners(prev => new Set(prev).add(key))}
+                    isLandscape={isLandscape}
+                />
+            </div>
 
             {/* Pause menu overlay */}
             {showPauseMenu && (
@@ -231,6 +247,7 @@ export const GameSessionView: React.FC<Props> = ({
                             width: '90%',
                             overflow: 'hidden',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                            transform: forceRotate ? 'rotate(90deg)' : undefined,
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >

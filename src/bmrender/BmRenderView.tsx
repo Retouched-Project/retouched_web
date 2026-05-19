@@ -89,7 +89,9 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                 const cw = viewport.w;
                 const ch = viewport.h;
                 if (cw > 0 && ch > 0) {
-                    const screenAspect = cw / ch;
+                    const longDim = Math.max(cw, ch);
+                    const shortDim = Math.min(cw, ch);
+                    const screenAspect = longDim / shortDim;
                     const targetW = Math.min(baseH * screenAspect, 568);
 
                     if (targetW > baseW) {
