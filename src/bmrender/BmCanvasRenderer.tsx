@@ -157,7 +157,9 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
 
         const targets: HitTarget[] = [];
         for (const obj of scheme.displayObjects || []) {
-            if (obj.hidden || (!obj.functionHandler && obj.type !== 'dpad')) continue;
+            if (obj.hidden) continue;
+            if (obj.type !== 'button' && obj.type !== 'dpad') continue;
+            if (obj.type === 'button' && !obj.functionHandler) continue;
             let hx = (obj.left ?? 0) * bW, hy = (obj.top ?? 0) * bH;
             let hw = (obj.width ?? 0) * bW, hh = (obj.height ?? 0) * bH;
             if (obj.hasHitRect) {
