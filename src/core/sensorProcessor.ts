@@ -65,9 +65,10 @@ export class SensorProcessor {
 
     private gridAlign(now: number, last: number, interval: number): number {
         if (interval <= 0) return now;
-        const nextAt = last + interval;
+        const effectiveInterval = interval / 2;
+        const nextAt = last + effectiveInterval;
         if (now >= nextAt) {
-            return ((now - nextAt) / interval | 0) * interval + nextAt;
+            return last + Math.floor((now - last) / effectiveInterval) * effectiveInterval;
         }
         return -1;
     }
