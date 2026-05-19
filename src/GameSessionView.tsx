@@ -11,6 +11,7 @@ import { BmRenderView } from './bmrender/BmRenderView';
 import { UnlockSlider } from './bmrender/controls/UnlockSlider';
 import type { UnlockSliderHandle } from './bmrender/controls/UnlockSlider';
 import { LoadingLogo } from './LoadingLogo';
+import { useViewportSize } from './hooks/useViewportSize';
 
 import menuDefaultIcon from './assets/retouched_logo.svg';
 import menuDisconnectIcon from './assets/menu_disconnect.svg';
@@ -67,31 +68,7 @@ export const GameSessionView: React.FC<Props> = ({
 
     const sliderRef = useRef<UnlockSliderHandle>(null);
     const isLandscapeRef = useRef(false);
-
-    const lockedRotationRef = React.useRef<ControlOrientation | null>(null);
-    useEffect(() => {
-        if (!scheme) return;
-        const rotation = getRotation(scheme);
-        if (lockedRotationRef.current === rotation) return;
-        lockedRotationRef.current = rotation;
-
-        const so = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
-        if (!so?.lock) return;
-
-        if (rotation === ControlOrientation.Landscape) {
-            so.lock('landscape').catch(() => { });
-        } else if (rotation === ControlOrientation.Portrait) {
-            so.lock('portrait').catch(() => { });
-        }
-    }, [scheme]);
-
-    useEffect(() => {
-        return () => {
-            lockedRotationRef.current = null;
-            const so = screen.orientation as ScreenOrientation & { unlock?: () => void };
-            so?.unlock?.();
-        };
-    }, []);
+    const viewport = useViewportSize();
 
     useEffect(() => {
         if (!client) return;
@@ -124,6 +101,10 @@ export const GameSessionView: React.FC<Props> = ({
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
+
+    const forceRotate = !!scheme
+        && getRotation(scheme) === ControlOrientation.Landscape
+        && viewport.h > viewport.w;
 
     const handleUnlocked = useCallback(() => {
         client.sendPause();
@@ -207,6 +188,7 @@ export const GameSessionView: React.FC<Props> = ({
                 floatingDpadEnabled={floatingDpadEnabled}
                 smartWidescreenEnabled={smartWidescreenEnabled}
                 preserveDpadDragEnabled={preserveDpadDragEnabled}
+                forceRotate={forceRotate}
             />
 
             {/* Unlock slider */}

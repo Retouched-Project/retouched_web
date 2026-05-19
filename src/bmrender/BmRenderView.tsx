@@ -10,6 +10,7 @@ import {
 } from './proto/schemeExtensions';
 import { assetManager } from './assetManager';
 import { BmCanvasRenderer } from './BmCanvasRenderer';
+import { useViewportSize } from '../hooks/useViewportSize';
 
 
 interface Props {
@@ -18,9 +19,11 @@ interface Props {
     floatingDpadEnabled: boolean;
     smartWidescreenEnabled: boolean;
     preserveDpadDragEnabled: boolean;
+    forceRotate: boolean;
 }
 
-export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, smartWidescreenEnabled, preserveDpadDragEnabled }) => {
+export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, smartWidescreenEnabled, preserveDpadDragEnabled, forceRotate }) => {
+    const viewport = useViewportSize();
     const containerRef = useRef<HTMLDivElement>(null);
     const [scheme, setScheme] = useState<ControlScheme | null>(null);
     const [loaded, setLoaded] = useState(false);
@@ -83,8 +86,8 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                 baseW <= 480 &&
                 (scheme.displayObjects || []).some(o => o.type === 'dpad')) {
 
-                const cw = window.innerWidth;
-                const ch = window.innerHeight;
+                const cw = viewport.w;
+                const ch = viewport.h;
                 if (cw > 0 && ch > 0) {
                     const screenAspect = cw / ch;
                     const targetW = Math.min(baseH * screenAspect, 568);
@@ -243,8 +246,8 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
         >
             <BmCanvasRenderer
                 scheme={effectiveScheme}
-                width={window.innerWidth}
-                height={window.innerHeight}
+                width={viewport.w}
+                height={viewport.h}
                 onButtonPress={handleButtonPress}
                 onDpadUpdate={handleDpadUpdate}
                 pressedButtons={pressedButtons}
@@ -252,6 +255,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                 baseH={designH}
                 floatingDpadEnabled={floatingDpadEnabled}
                 preserveDpadDragEnabled={preserveDpadDragEnabled}
+                forceRotate={forceRotate}
                 onTouchSet={handleTouchSet}
             />
         </div>

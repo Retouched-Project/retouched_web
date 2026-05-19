@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
+import { VitePWA } from 'vite-plugin-pwa'
 
 const keyPath = process.env.VITE_CERT_KEY;
 const certPath = process.env.VITE_CERT_PEM;
@@ -20,7 +21,26 @@ export default defineConfig({
   plugins: [
     react(),
     wasm(),
-    topLevelAwait()
+    topLevelAwait(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['retouched_logo.svg', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'Retouched Web',
+        short_name: 'Retouched Web',
+        description: 'Retouched Web controller',
+        theme_color: '#000000',
+        background_color: '#000000',
+        display: 'fullscreen',
+        orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      },
+    }),
   ],
   server: {
     port: 8089,

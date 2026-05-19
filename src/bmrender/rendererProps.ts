@@ -14,5 +14,6 @@ export interface RendererProps {
     baseH: number;
     floatingDpadEnabled: boolean;
     preserveDpadDragEnabled: boolean;
+    forceRotate: boolean;
     onTouchSet?: (touches: Array<{ id: number; x: number; y: number; state: number }>) => void;
 }

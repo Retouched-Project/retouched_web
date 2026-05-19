@@ -24,7 +24,7 @@ interface HitTarget {
 
 export const BmCanvasRenderer: React.FC<RendererProps> = ({
     scheme, width, height, onButtonPress, onDpadUpdate,
-    pressedButtons, baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, onTouchSet,
+    pressedButtons, baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, onTouchSet,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const activeDpadPointers = useRef<Map<number, number>>(new Map());
@@ -96,14 +96,22 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         let bH = baseH;
         const rotation = getRotation(scheme);
         let rotated = false;
-        if (rotation === ControlOrientation.Landscape && bW < bH) {
+        if (rotation === ControlOrientation.Landscape && (bW < bH || forceRotate)) {
             rotated = true;
-            const t = bW; bW = bH; bH = t;
+            if (bW < bH) {
+                const t = bW; bW = bH; bH = t;
+            }
         }
 
-        const scale = Math.min(width / bW, height / bH);
-        const offsetX = (width - bW * scale) / 2;
-        const offsetY = (height - bH * scale) / 2;
+        const scale = rotated
+            ? Math.min(width / bH, height / bW)
+            : Math.min(width / bW, height / bH);
+        const offsetX = rotated
+            ? (width - bH * scale) / 2
+            : (width - bW * scale) / 2;
+        const offsetY = rotated
+            ? (height - bW * scale) / 2
+            : (height - bH * scale) / 2;
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -111,10 +119,9 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         ctx.scale(dpr, dpr);
 
         if (rotated) {
-            ctx.translate(offsetX + bW * scale / 2, offsetY + bH * scale / 2);
+            ctx.translate(offsetX + bH * scale, offsetY);
             ctx.rotate(Math.PI / 2);
             ctx.scale(scale, scale);
-            ctx.translate(-bH / 2, -bW / 2);
         } else {
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
@@ -170,7 +177,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         if (pointerPositions.current.size > 0) {
             recalculateHitsRef.current?.();
         }
-    }, [scheme, width, height, pressedButtons, baseW, baseH, preserveDpadDragEnabled, dpadTick]);
+    }, [scheme, width, height, pressedButtons, baseW, baseH, preserveDpadDragEnabled, forceRotate, dpadTick]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
