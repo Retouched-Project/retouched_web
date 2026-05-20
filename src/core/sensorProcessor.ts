@@ -25,6 +25,7 @@ export class SensorProcessor {
 
     private orientationEnabled = false;
     private orientationSensor: Sensor | null = null;
+    private orientationDeviceHandler: ((e: DeviceOrientationEvent) => void) | null = null;
     private orientationTimer: ReturnType<typeof setInterval> | null = null;
     private lastOrientationSentAt = 0;
     private orientationIntervalMs = 50;
@@ -221,7 +222,7 @@ export class SensorProcessor {
     }
 
     startOrientation(targetDeviceId: string) {
-        if (this.orientationSensor || this.orientationTimer) return;
+        if (this.orientationSensor || this.orientationDeviceHandler || this.orientationTimer) return;
 
         if (SensorProcessor.permissionGranted === false) {
             this.onStatusChange?.('permission_denied');
@@ -260,9 +261,46 @@ export class SensorProcessor {
                 return;
             } catch (e) {
                 if (!this.orientationSensor && !this.orientationTimer) {
-                    console.warn('[SensorProcessor] AbsoluteOrientationSensor API failed, falling back to accel approximation', e);
+                    console.warn('[SensorProcessor] AbsoluteOrientationSensor API failed, falling back to DeviceOrientationEvent', e);
                 }
             }
+        }
+
+        if (typeof DeviceOrientationEvent !== 'undefined') {
+            let baselineInv: [number, number, number, number] | null = null;
+            const handler = (e: DeviceOrientationEvent) => {
+                if (e.alpha == null || e.beta == null || e.gamma == null) return;
+                const rx = e.beta * Math.PI / 180;
+                const ry = e.gamma * Math.PI / 180;
+                const rz = e.alpha * Math.PI / 180;
+                const cX = Math.cos(rx / 2), sX = Math.sin(rx / 2);
+                const cY = Math.cos(ry / 2), sY = Math.sin(ry / 2);
+                const cZ = Math.cos(rz / 2), sZ = Math.sin(rz / 2);
+                const qx = sX * cY * cZ - cX * sY * sZ;
+                const qy = cX * sY * cZ + sX * cY * sZ;
+                const qz = cX * cY * sZ + sX * sY * cZ;
+                const qw = cX * cY * cZ - sX * sY * sZ;
+                if (!baselineInv) {
+                    baselineInv = [-qx, -qy, -qz, qw];
+                }
+                // Magic math yet again!
+                const ix = baselineInv[0], iy = baselineInv[1], iz = baselineInv[2], iw = baselineInv[3];
+                const dx = iw * qx + ix * qw + iy * qz - iz * qy;
+                const dy = iw * qy - ix * qz + iy * qw + iz * qx;
+                const dz = iw * qz + ix * qy - iy * qx + iz * qw;
+                const dw = iw * qw - ix * qx - iy * qy - iz * qz;
+                const aligned = this.gridAlign(Date.now(), this.lastOrientationSentAt, this.orientationIntervalMs);
+                if (aligned < 0) return;
+                this.lastOrientationSentAt = aligned;
+                this.processActions(this.engine.makeOrientation(
+                    targetDeviceId,
+                    dx, dy, dz, dw,
+                    this.controlReliability
+                ));
+            };
+            window.addEventListener('deviceorientation', handler);
+            this.orientationDeviceHandler = handler;
+            return;
         }
 
         this.startAccel(targetDeviceId);
@@ -282,6 +320,10 @@ export class SensorProcessor {
         if (this.orientationSensor) {
             this.orientationSensor.stop();
             this.orientationSensor = null;
+        }
+        if (this.orientationDeviceHandler) {
+            window.removeEventListener('deviceorientation', this.orientationDeviceHandler);
+            this.orientationDeviceHandler = null;
         }
         if (this.orientationTimer) {
             clearInterval(this.orientationTimer);
@@ -332,7 +374,7 @@ export class SensorProcessor {
         if (config.orientationIntervalMs !== undefined) {
             const nextInterval = Math.max(10, config.orientationIntervalMs);
             if (nextInterval !== this.orientationIntervalMs) {
-                const wasRunning = !!(this.orientationSensor || this.orientationTimer);
+                const wasRunning = !!(this.orientationSensor || this.orientationDeviceHandler || this.orientationTimer);
                 this.orientationIntervalMs = nextInterval;
                 if (wasRunning) {
                     this.stopOrientation();
