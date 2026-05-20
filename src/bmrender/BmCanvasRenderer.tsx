@@ -24,7 +24,7 @@ interface HitTarget {
 
 export const BmCanvasRenderer: React.FC<RendererProps> = ({
     scheme, width, height, onButtonPress, onDpadUpdate,
-    pressedButtons, baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, onTouchSet,
+    pressedButtons, baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, widescreenStretched, onTouchSet,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const pointerPositions = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -144,7 +144,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
                 const bmp = resolveBitmap(obj, isPressed ? 'down' : 'up') || resolveBitmap(obj, 'up');
                 if (bmp) {
                     ctx.imageSmoothingEnabled = getSamplingMode(obj) === SamplingMode.Bilinear;
-                    if ((obj.width ?? 0) > 0.95) {
+                    if (widescreenStretched && (obj.width ?? 0) > 0.95) {
                         drawSliced(ctx, bmp, px, py, pw, ph);
                     } else {
                         ctx.drawImage(bmp, px, py, pw, ph);
@@ -178,7 +178,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         if (pointerPositions.current.size > 0) {
             recalculateHitsRef.current?.();
         }
-    }, [scheme, width, height, pressedButtons, baseW, baseH, preserveDpadDragEnabled, forceRotate, dpadTick]);
+    }, [scheme, width, height, pressedButtons, baseW, baseH, preserveDpadDragEnabled, forceRotate, widescreenStretched, dpadTick]);
 
     useEffect(() => {
         const canvas = canvasRef.current;

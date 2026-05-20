@@ -31,6 +31,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
     const [effectiveScheme, setEffectiveScheme] = useState<ControlScheme | null>(null);
     const [designW, setDesignW] = useState(0);
     const [designH, setDesignH] = useState(0);
+    const [widescreenStretched, setWidescreenStretched] = useState(false);
 
     const [pressedButtons, setPressedButtons] = useState<Set<string>>(new Set());
 
@@ -81,6 +82,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
             }
 
             let workingScheme = scheme;
+            let stretched = false;
             if (smartWidescreenEnabled &&
                 rotation === ControlOrientation.Landscape &&
                 baseW <= 480 &&
@@ -141,6 +143,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                             displayObjects: newObjects,
                         });
                         baseW = targetW;
+                        stretched = true;
                     }
                 }
             }
@@ -148,6 +151,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
             setDesignW(baseW);
             setDesignH(baseH);
             setEffectiveScheme(workingScheme);
+            setWidescreenStretched(stretched);
             setLoaded(true);
 
             const newHandlers = new Set(
@@ -258,6 +262,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                 floatingDpadEnabled={floatingDpadEnabled}
                 preserveDpadDragEnabled={preserveDpadDragEnabled}
                 forceRotate={forceRotate}
+                widescreenStretched={widescreenStretched}
                 onTouchSet={handleTouchSet}
             />
         </div>
