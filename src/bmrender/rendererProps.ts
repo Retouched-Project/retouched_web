@@ -9,7 +9,6 @@ export interface RendererProps {
     height: number;
     onButtonPress: (handler: string, pressed: boolean) => void;
     onDpadUpdate: (nx: number, ny: number) => void;
-    pressedButtons: Set<string>;
     baseW: number;
     baseH: number;
     floatingDpadEnabled: boolean;

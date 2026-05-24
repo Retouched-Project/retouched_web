@@ -33,8 +33,6 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
     const [designH, setDesignH] = useState(0);
     const [widescreenStretched, setWidescreenStretched] = useState(false);
 
-    const [pressedButtons, setPressedButtons] = useState<Set<string>>(new Set());
-
     const activeButtonsRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
@@ -176,17 +174,11 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
         if (pressed) {
             if (!activeButtonsRef.current.has(handler)) {
                 activeButtonsRef.current.add(handler);
-                setPressedButtons(prev => new Set(prev).add(handler));
                 client.sendButton(handler, true);
             }
         } else {
             if (activeButtonsRef.current.has(handler)) {
                 activeButtonsRef.current.delete(handler);
-                setPressedButtons(prev => {
-                    const n = new Set(prev);
-                    n.delete(handler);
-                    return n;
-                });
                 client.sendButton(handler, false);
             }
         }
@@ -256,7 +248,6 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                 height={viewport.h}
                 onButtonPress={handleButtonPress}
                 onDpadUpdate={handleDpadUpdate}
-                pressedButtons={pressedButtons}
                 baseW={designW}
                 baseH={designH}
                 floatingDpadEnabled={floatingDpadEnabled}

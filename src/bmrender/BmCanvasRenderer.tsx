@@ -24,12 +24,13 @@ interface HitTarget {
 
 export const BmCanvasRenderer: React.FC<RendererProps> = ({
     scheme, width, height, onButtonPress, onDpadUpdate,
-    pressedButtons, baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, widescreenStretched, onTouchSet,
+    baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, widescreenStretched, onTouchSet,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const pointerPositions = useRef<Map<number, { x: number; y: number }>>(new Map());
     const pointerStates = useRef<Map<number, { id: number; x: number; y: number; state: number }>>(new Map());
     const currentlyPressedRef = useRef<Set<string>>(new Set());
+    const currentlyPressedObjsRef = useRef<Set<DisplayObject>>(new Set());
     const hitTargetsRef = useRef<HitTarget[]>([]);
     const inverseRef = useRef<DOMMatrix | null>(null);
     const recalculateHitsRef = useRef<(() => void) | null>(null);
@@ -140,7 +141,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
             } else if (obj.type === 'text') {
                 drawText(ctx, obj, px, py, pw, ph, bH);
             } else {
-                const isPressed = obj.functionHandler && pressedButtons.has(obj.functionHandler);
+                const isPressed = currentlyPressedObjsRef.current.has(obj);
                 const bmp = resolveBitmap(obj, isPressed ? 'down' : 'up') || resolveBitmap(obj, 'up');
                 if (bmp) {
                     ctx.imageSmoothingEnabled = getSamplingMode(obj) === SamplingMode.Bilinear;
@@ -178,7 +179,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         if (pointerPositions.current.size > 0) {
             recalculateHitsRef.current?.();
         }
-    }, [scheme, width, height, pressedButtons, baseW, baseH, preserveDpadDragEnabled, forceRotate, widescreenStretched, dpadTick]);
+    }, [scheme, width, height, baseW, baseH, preserveDpadDragEnabled, forceRotate, widescreenStretched, dpadTick]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -207,6 +208,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
 
         const recalculateHits = () => {
             const currentHits = new Set<string>();
+            const currentHitObjs = new Set<DisplayObject>();
 
             for (const t of hitTargetsRef.current) {
                 if (!t.functionHandler) continue;
@@ -214,6 +216,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
                     if (pos.x >= t.hitRect.left && pos.x < t.hitRect.left + t.hitRect.width &&
                         pos.y >= t.hitRect.top && pos.y < t.hitRect.top + t.hitRect.height) {
                         currentHits.add(t.functionHandler);
+                        currentHitObjs.add(t.obj);
                         break;
                     }
                 }
@@ -230,6 +233,19 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
                     currentlyPressedRef.current.delete(h);
                     onButtonPressRef.current(h, false);
                 }
+            }
+
+            let visualChanged = false;
+            if (currentHitObjs.size !== currentlyPressedObjsRef.current.size) {
+                visualChanged = true;
+            } else {
+                for (const o of currentHitObjs) {
+                    if (!currentlyPressedObjsRef.current.has(o)) { visualChanged = true; break; }
+                }
+            }
+            if (visualChanged) {
+                currentlyPressedObjsRef.current = currentHitObjs;
+                setDpadTick(t => t + 1);
             }
 
             let dpadChanged = false;
