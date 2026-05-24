@@ -16,7 +16,7 @@ On Android it is possible to bypass the HTTPS warning but iOS is more restrictiv
 
 ## Known Bugs
 - In BC Bow Contest the X button to close the weapons menu is hard to trigger.
-- The D-Pad can be dragged even if the finger is off the game view -> Unfaithful to Touchy.
+- ~~The D-Pad can be dragged even if the finger is off the game view -> Unfaithful to Touchy.~~ (Fixed in v1.0.3)
 
 ## License
 This project is licensed under the AGPL-3.0 License.  
