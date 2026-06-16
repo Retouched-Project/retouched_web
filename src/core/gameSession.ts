@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import { WasmEngineBridge } from './engine/wasmEngineBridge';
+import type { BmEngine } from '../bmEngine';
 import { DeviceInfo } from './deviceInfo';
 import { MetricsService } from '../utils/metricsService';
-import type { BmAction, BmRegistryInfo } from '../types';
+import type { BmOutgoing, BmRegistryInfo } from '../types';
 
 export class GameSession {
-    private engine: WasmEngineBridge;
+    private engine: BmEngine;
     private identity: DeviceInfo;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private onStateUpdate: (partial: any) => void;
@@ -16,7 +16,7 @@ export class GameSession {
     private isPaused = false;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(engine: WasmEngineBridge, identity: DeviceInfo, onStateUpdate: (partial: any) => void) {
+    constructor(engine: BmEngine, identity: DeviceInfo, onStateUpdate: (partial: any) => void) {
         this.engine = engine;
         this.identity = identity;
         this.onStateUpdate = onStateUpdate;
@@ -28,7 +28,7 @@ export class GameSession {
             return;
         }
 
-        console.log('[GameSession] Joining game:', game.deviceName);
+        console.log('[GameSession] Joining game:', game.device.deviceName);
         this.activeGame = game;
         this.isPaused = false;
 
@@ -48,11 +48,11 @@ export class GameSession {
         MetricsService.send(MetricsService.SESSION_START, game.appId ?? '', this.identity.getDeviceId());
     }
 
-    disconnectGame(sendAction: (payload: BmAction[]) => void, sendDisconnectSignal: (payload: Uint8Array) => void) {
+    disconnectGame(sendAction: (payload: BmOutgoing[]) => void, sendDisconnectSignal: (payload: Uint8Array) => void) {
         if (this.activeGame) {
             MetricsService.send(MetricsService.SESSION_END, this.activeGame.appId ?? '', this.identity.getDeviceId());
 
-            const targetId = this.activeGame.device.id;
+            const targetId = this.activeGame.device.deviceId;
             sendAction(this.engine.makeSimpleInvoke(targetId, 'bmPause'));
 
             try {
@@ -72,10 +72,10 @@ export class GameSession {
         });
     }
 
-    async sendGameInitSequence(getCapabilities: () => Promise<number>, sendAction: (payload: BmAction[]) => void) {
+    async sendGameInitSequence(getCapabilities: () => Promise<number>, sendAction: (payload: BmOutgoing[]) => void) {
         if (!this.activeGame) return;
 
-        const targetId = this.activeGame.device.id;
+        const targetId = this.activeGame.device.deviceId;
         const deviceId = this.identity.getDeviceId();
 
         const caps = await getCapabilities();
@@ -90,18 +90,18 @@ export class GameSession {
         sendAction(xmlActions);
     }
 
-    setPaused(paused: boolean, sendAction: (payload: BmAction[]) => void) {
+    setPaused(paused: boolean, sendAction: (payload: BmOutgoing[]) => void) {
         if (!this.activeGame || this.isPaused === paused) return;
         this.isPaused = paused;
 
-        const targetId = this.activeGame.device.id;
+        const targetId = this.activeGame.device.deviceId;
         const actions = this.engine.makeSimpleInvoke(targetId, 'bmPause');
         sendAction(actions);
     }
 
-    sendMenuEvent(event: string, sendAction: (payload: BmAction[]) => void) {
+    sendMenuEvent(event: string, sendAction: (payload: BmOutgoing[]) => void) {
         if (!this.activeGame) return;
-        const targetId = this.activeGame.device.id;
+        const targetId = this.activeGame.device.deviceId;
         const actions = this.engine.makeSimpleInvoke(targetId, 'menuEvent', null, event);
         sendAction(actions);
     }

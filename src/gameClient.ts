@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import type { BmAction, BmRegistryInfo } from './types';
+import type { BmEvent, BmControlConfig, BmRegistryInfo } from './types';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { isAccelerometerEnabled } from './bmrender/proto/schemeExtensions';
 import { assetManager } from './bmrender/assetManager';
-import { WasmEngineBridge } from './core/engine/wasmEngineBridge';
+import { bmEngine, type BmEngine } from './bmEngine';
 import { WebRtcTransport } from './core/webRtcTransport';
 import { DeviceInfo } from './core/deviceInfo';
 import { VibrationService } from './utils/vibrationService';
@@ -34,7 +34,7 @@ export class GameClient {
     );
 
     private transport: WebRtcTransport;
-    private engine: WasmEngineBridge;
+    private engine: BmEngine;
     private identity: DeviceInfo;
 
     private registry: RegistryClient;
@@ -61,22 +61,17 @@ export class GameClient {
 
     constructor(signalingUrl: string = '/offer') {
         this.transport = new WebRtcTransport(signalingUrl);
-        this.engine = WasmEngineBridge.getInstance();
+        this.engine = bmEngine;
         this.identity = new DeviceInfo();
 
         this.registry = new RegistryClient(this.engine, (p) => this.handleDelegateUpdate(p));
         this.session = new GameSession(this.engine, this.identity, (p) => this.handleDelegateUpdate(p));
         this.protocol = new ProtocolCoordinator(this.engine, this.transport, {
-            onRegistryEvent: (a) => this.registry.processRegistryEvent(a, this.state.games),
-            onInvoke: (a) => this.handleInvoke(a),
-            onControlConfig: (a) => this.handleControlConfig(a),
-            onChunkProgress: (curr, tot) => this.updateState({ progress: tot > 0 ? curr / tot : 0 }),
-            onChunkComplete: (a) => this.handleChunkComplete(a),
-            onLog: (msg) => console.log(`[BM] ${msg}`)
+            onEvent: (ev) => this.handleEvent(ev),
         });
         this.schemes = new SchemeService(this.engine);
-        this.touch = new TouchProcessor(this.engine, (a) => this.protocol.processActions(a, this.state.activeGame));
-        this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.processActions(a, this.state.activeGame));
+        this.touch = new TouchProcessor(this.engine, (a) => this.protocol.sendOutgoings(a, this.state.activeGame));
+        this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.sendOutgoings(a, this.state.activeGame));
         this.sensors.onStatusChange = (status) => this.updateState({ sensorStatus: status });
 
         this.setupTransportListeners();
@@ -85,7 +80,7 @@ export class GameClient {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private handleDelegateUpdate(partial: any) {
         if (partial.actionsToProcess) {
-            this.protocol.processActions(partial.actionsToProcess, this.state.activeGame);
+            this.protocol.sendOutgoings(partial.actionsToProcess, this.state.activeGame);
             delete partial.actionsToProcess;
         }
         if (partial.selfInfo) {
@@ -98,7 +93,7 @@ export class GameClient {
         }
         if (partial.disconnectedIds) {
             const activeGame = this.session.getActiveGame();
-            if (activeGame && partial.disconnectedIds.includes(activeGame.deviceId)) {
+            if (activeGame && partial.disconnectedIds.includes(activeGame.device.deviceId)) {
                 this.disconnectGame();
             }
             delete partial.disconnectedIds;
@@ -159,7 +154,7 @@ export class GameClient {
                     this.transport.send('game', handshake);
                     this.session.sendGameInitSequence(
                         () => this.getCapabilities(),
-                        (actions) => this.protocol.processActions(actions, this.state.activeGame)
+                        (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)
                     );
                 } else if (label === 'registry' && !this.registryHandshakeReceived) {
                     this.registryHandshakeReceived = true;
@@ -223,11 +218,38 @@ export class GameClient {
         await this.transport.connect();
     }
 
-    private handleInvoke(action: BmAction & { type: 'Invoke' }) {
-        if (action.method === 'onHostConnected' || action.method === 'onHostUpdate' || action.method === 'onHostDisconnected') {
-            this.registry.handleInvoke(action, this.state.games);
-        } else if (action.method === 'vibrate') {
-            VibrationService.vibrate();
+    private handleEvent(ev: BmEvent) {
+        switch (ev.type) {
+            case 'RegistrationResult':
+                this.registry.onRegistrationResult();
+                break;
+            case 'HostList':
+                this.registry.onHostsReceived(ev.infos);
+                break;
+            case 'HostConnected':
+            case 'HostUpdated':
+                this.registry.onHostUpsert(ev.info, this.state.games);
+                break;
+            case 'HostDisconnected':
+                this.registry.onHostDisconnected(ev.info, this.state.games);
+                break;
+            case 'ControlConfig':
+                this.handleControlConfig(ev);
+                break;
+            case 'ChunkProgress':
+                this.updateState({ progress: ev.total > 0 ? ev.current / ev.total : 0 });
+                break;
+            case 'ChunkComplete':
+                this.handleChunkComplete(ev);
+                break;
+            case 'ControlScheme':
+                this.handleControlScheme(ev);
+                break;
+            case 'Vibrate':
+                VibrationService.vibrate();
+                break;
+            default:
+                break;
         }
     }
 
@@ -235,8 +257,8 @@ export class GameClient {
         this.protocol.resetFramer('game');
         this.gameHandshakeReceived = false;
         this.session.joinGame(game, this.selfInfo);
-        if (game.device.address.unreliable_port !== 0) {
-            const msg = JSON.stringify({ type: 'set_game_udp_port', port: game.device.address.unreliable_port });
+        if (game.deviceAddress.unreliablePort !== 0) {
+            const msg = JSON.stringify({ type: 'set_game_udp_port', port: game.deviceAddress.unreliablePort });
             this.transport.send('game', new TextEncoder().encode(msg));
         }
     }
@@ -247,7 +269,7 @@ export class GameClient {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
             const caps = await this.getCapabilities();
-            this.protocol.processActions(this.engine.makeSetCapabilities(activeGame.deviceId, caps), activeGame);
+            this.protocol.sendOutgoings(this.engine.makeSetCapabilities(activeGame.device.deviceId, caps), activeGame);
         }
     }
 
@@ -279,35 +301,35 @@ export class GameClient {
     sendButton(handler: string, pressed: boolean) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            this.protocol.processActions(this.engine.makeButtonInvoke(activeGame.deviceId, handler, pressed), activeGame);
+            this.protocol.sendOutgoings(this.engine.makeButtonInvoke(activeGame.device.deviceId, handler, pressed), activeGame);
         }
     }
 
     sendDpad(x: number, y: number) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            this.protocol.processActions(this.engine.makeDpadUpdate(activeGame.deviceId, x, y), activeGame);
+            this.protocol.sendOutgoings(this.engine.makeDpadUpdate(activeGame.device.deviceId, x, y), activeGame);
         }
     }
 
-    sendPause() { this.session.setPaused(true, (actions) => this.protocol.processActions(actions, this.state.activeGame)); }
-    sendResume() { this.session.setPaused(false, (actions) => this.protocol.processActions(actions, this.state.activeGame)); }
+    sendPause() { this.session.setPaused(true, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
+    sendResume() { this.session.setPaused(false, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
 
     sendMenuEvent(event: string) {
-        this.session.sendMenuEvent(event, (actions) => this.protocol.processActions(actions, this.state.activeGame));
+        this.session.sendMenuEvent(event, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame));
     }
 
     handleTouchSet(touches: Array<{ id: number, x: number, y: number, state: number }>, screenWidth: number, screenHeight: number) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            this.touch.handleTouchSet(touches, screenWidth, screenHeight, activeGame.deviceId);
+            this.touch.handleTouchSet(touches, screenWidth, screenHeight, activeGame.device.deviceId);
         }
     }
 
     disconnectGame() {
         const activeGame = this.session.getActiveGame();
         this.session.disconnectGame(
-            (actions) => this.protocol.processActions(actions, activeGame),
+            (actions) => this.protocol.sendOutgoings(actions, activeGame),
             (payload) => this.transport.send('game', payload)
         );
         assetManager.dispose();
@@ -326,7 +348,7 @@ export class GameClient {
         this.updateState({ connected: false, activeGame: null, scheme: null, progress: 0, games: [] });
     }
 
-    private handleControlConfig(cfg: BmAction & { type: 'ControlConfig' }) {
+    private handleControlConfig(cfg: BmControlConfig) {
         const activeGame = this.session.getActiveGame();
         if (!activeGame) return;
 
@@ -342,7 +364,7 @@ export class GameClient {
             gyroIntervalMs: cfg.gyroIntervalMs,
             orientationEnabled: cfg.orientationEnabled,
             orientationIntervalMs: cfg.orientationIntervalMs
-        }, activeGame.deviceId);
+        }, activeGame.device.deviceId);
 
         if (cfg.touchEnabled != null && this.state.scheme) {
             this.updateState({ scheme: ControlScheme.create({ ...this.state.scheme, touchEnabled: cfg.touchEnabled }) });
@@ -350,14 +372,14 @@ export class GameClient {
 
         if (cfg.accelEnabled != null) {
             if (cfg.accelEnabled) {
-                this.sensors.startAccel(activeGame.deviceId);
+                this.sensors.startAccel(activeGame.device.deviceId);
             } else {
                 this.sensors.stopAccel();
             }
         }
         if (cfg.gyroEnabled != null) {
             if (cfg.gyroEnabled) {
-                this.sensors.startGyro(activeGame.deviceId);
+                this.sensors.startGyro(activeGame.device.deviceId);
             } else {
                 this.sensors.stopGyro();
             }
@@ -367,27 +389,33 @@ export class GameClient {
         }
     }
 
-    private handleChunkComplete(action: BmAction & { type: 'ChunkComplete' }) {
-        const { scheme, isUpdate } = this.schemes.parseChunk(action);
-        if (!scheme) return;
-
-        if (!isUpdate) { // setId === 'testXML'
-            this.updateState({ scheme, progress: 1.0 });
-            const activeGame = this.session.getActiveGame();
-            if (isAccelerometerEnabled(scheme) && activeGame) {
-                this.sensors.startAccel(activeGame.deviceId);
-            }
-            this.onSchemeParsed();
-        } else { // setId === 'updateXML'
-            this.updateState({ scheme });
+    private handleControlScheme(ev: BmEvent & { type: 'ControlScheme' }) {
+        let scheme: ControlScheme;
+        try {
+            scheme = ControlScheme.decode(ev.scheme);
+        } catch (e) {
+            console.error('[GameClient] ControlScheme decode failed:', e);
+            return;
         }
+        this.schemes.setBaseScheme(scheme);
+        this.updateState({ scheme, progress: 1.0 });
+        const activeGame = this.session.getActiveGame();
+        if (isAccelerometerEnabled(scheme) && activeGame) {
+            this.sensors.startAccel(activeGame.device.deviceId);
+        }
+        this.onSchemeParsed();
+    }
+
+    private handleChunkComplete(ev: BmEvent & { type: 'ChunkComplete' }) {
+        const { scheme } = this.schemes.parseChunk({ setId: ev.setId, blob: ev.blob });
+        if (scheme) this.updateState({ scheme });
     }
 
     private onSchemeParsed() {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            const actions = this.engine.makeOnControlSchemeParsed(activeGame.deviceId, this.identity.getDeviceId());
-            this.protocol.processActions(actions, activeGame);
+            const actions = this.engine.makeOnControlSchemeParsed(activeGame.device.deviceId, this.identity.getDeviceId());
+            this.protocol.sendOutgoings(actions, activeGame);
         }
     }
 

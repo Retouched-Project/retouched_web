@@ -1,24 +1,81 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
+export interface BmAddress {
+    address: string;
+    unreliablePort: number;
+    reliablePort: number;
+}
+
+export interface BmDeviceCore {
+    deviceId: string;
+    deviceName: string;
+    deviceType: number;
+    address: BmAddress | null;
+}
+
 export interface BmRegistryInfo {
     slotId: number;
     appId: string;
-    currentPlayers: number;
-    maxPlayers: number;
-    deviceType: number;
-    deviceId: string;
-    deviceName: string;
-    device: {
-        id: string;
-        name: string;
-        device_type: number;
-        address: {
-            address: string;
-            reliable_port: number;
-            unreliable_port: number;
-        };
-    };
+    currentPlayers: number | null;
+    maxPlayers: number | null;
+    device: BmDeviceCore;
+    deviceAddress: BmAddress;
+}
+
+export interface BmDeviceRecord {
+    core: BmDeviceCore;
+    classId: number | null;
+    info: BmRegistryInfo | null;
+}
+
+export interface BmOutgoing {
+    targetDeviceId: string;
+    channel: number;
+    reliability: number;
+    payload: Uint8Array;
+}
+
+export interface BmControlConfig {
+    touchEnabled?: boolean | null;
+    accelEnabled?: boolean | null;
+    gyroEnabled?: boolean | null;
+    orientationEnabled?: boolean | null;
+    touchIntervalMs?: number | null;
+    accelIntervalMs?: number | null;
+    gyroIntervalMs?: number | null;
+    orientationIntervalMs?: number | null;
+    touchReliability?: number | null;
+    controlReliability?: number | null;
+    controlMode?: number | null;
+    portalId?: string | null;
+    returnAppId?: string | null;
+}
+
+export type BmEvent =
+    | { type: 'Handshake'; current: number; minimum: number }
+    | { type: 'PeerSeen'; record: BmDeviceRecord }
+    | { type: 'PeerConnected'; record: BmDeviceRecord }
+    | { type: 'ConnectionFailed'; deviceId: string }
+    | { type: 'RegistrationResult'; success: boolean }
+    | { type: 'SlotAssigned'; info: BmRegistryInfo }
+    | { type: 'HostConnected'; info: BmRegistryInfo }
+    | { type: 'HostUpdated'; info: BmRegistryInfo }
+    | { type: 'HostDisconnected'; info: BmRegistryInfo }
+    | { type: 'HostList'; infos: BmRegistryInfo[] }
+    | { type: 'DeviceConnectRequested'; info: BmRegistryInfo }
+    | { type: 'DeviceKilled'; deviceId: string }
+    | { type: 'Vibrate'; sender: string }
+    | { type: 'Pause'; sender: string }
+    | ({ type: 'ControlConfig' } & BmControlConfig)
+    | { type: 'Invoke'; sender: string | null; method: string; returnMethod: string | null; params: unknown[] }
+    | { type: 'ChunkProgress'; deviceId: string; setId: string; current: number; total: number }
+    | { type: 'ChunkComplete'; deviceId: string; setId: string; blob: Uint8Array }
+    | { type: 'ControlScheme'; deviceId: string; scheme: Uint8Array };
+
+export interface BmProcessOutput {
+    events: BmEvent[];
+    outgoings: BmOutgoing[];
 }
 
 export interface BmClientState {
@@ -26,36 +83,6 @@ export interface BmClientState {
     games: BmRegistryInfo[];
     scheme?: unknown;
 }
-
-export type BmAction =
-    | { type: 'Send', targetDeviceId: string, channel: number, reliability: number, payload: Uint8Array }
-    | { type: 'RegistryEvent', kind: string, success?: boolean, infos: BmRegistryInfo[] }
-    | { type: 'ChunkProgress', deviceId: string, setId: string, current: number, total: number }
-    | { type: 'ChunkComplete', deviceId: string, setId: string, blob: Uint8Array }
-    | { type: 'Log', level: number, message: string }
-    | { type: 'ControlConfig', touchEnabled?: boolean, accelEnabled?: boolean, gyroEnabled?: boolean, orientationEnabled?: boolean, touchIntervalMs?: number, accelIntervalMs?: number, gyroIntervalMs?: number, orientationIntervalMs?: number, touchReliability?: number, controlReliability?: number, controlMode?: number, portalId?: string, returnAppId?: string }
-    | { type: 'Invoke', method: string, returnMethod?: string, rawBytes?: Uint8Array, params?: unknown[] }
-    | { type: 'Vibration', deviceId: string };
-
-export const ActionKind = {
-    Send: 0,
-    UpdateRegistry: 1,
-    ChunkSetComplete: 2,
-    ChunkProgress: 3,
-    Log: 4,
-    RegistryEvent: 5,
-    Invoke: 6,
-    ControlConfig: 7,
-};
-
-export const RegistryEventKind = {
-    OnRegister: "OnRegister",
-    OnList: "OnList",
-    OnHostConnected: "OnHostConnected",
-    OnHostUpdate: "OnHostUpdate",
-    OnHostDisconnected: "OnHostDisconnected",
-    DeviceConnectRequested: "DeviceConnectRequested",
-};
 
 export const DeviceType = {
     Any: 0,

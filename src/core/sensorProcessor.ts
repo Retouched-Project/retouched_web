@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import { WasmEngineBridge } from './engine/wasmEngineBridge';
-import type { BmAction } from '../types';
+import type { BmEngine } from '../bmEngine';
+import type { BmOutgoing } from '../types';
 
 export type SensorStatus = 'idle' | 'active' | 'permission_denied' | 'unavailable';
 
 export class SensorProcessor {
-    private engine: WasmEngineBridge;
-    private processActions: (actions: BmAction[]) => void;
+    private engine: BmEngine;
+    private processActions: (actions: BmOutgoing[]) => void;
 
     private accelSensor: Sensor | null = null;
     private accelDeviceMotionHandler: ((e: DeviceMotionEvent) => void) | null = null;
@@ -35,7 +35,7 @@ export class SensorProcessor {
     private static permissionGranted: boolean | null = null;
     onStatusChange?: (status: SensorStatus) => void;
 
-    constructor(engine: WasmEngineBridge, processActions: (actions: BmAction[]) => void) {
+    constructor(engine: BmEngine, processActions: (actions: BmOutgoing[]) => void) {
         this.engine = engine;
         this.processActions = processActions;
     }
@@ -342,10 +342,10 @@ export class SensorProcessor {
         return [sr * cp, cr * sp, sr * sp, cr * cp]; // Simplified for yaw=0
     }
 
-    configure(config: { controlReliability?: number, accelIntervalMs?: number, gyroIntervalMs?: number, orientationEnabled?: boolean, orientationIntervalMs?: number }, targetDeviceId: string) {
-        if (config.controlReliability !== undefined) this.controlReliability = config.controlReliability;
+    configure(config: { controlReliability?: number | null, accelIntervalMs?: number | null, gyroIntervalMs?: number | null, orientationEnabled?: boolean | null, orientationIntervalMs?: number | null }, targetDeviceId: string) {
+        if (config.controlReliability != null) this.controlReliability = config.controlReliability;
 
-        if (config.accelIntervalMs !== undefined && config.accelIntervalMs !== this.accelIntervalMs) {
+        if (config.accelIntervalMs != null && config.accelIntervalMs !== this.accelIntervalMs) {
             const wasRunning = this.accelSensor || this.accelDeviceMotionHandler;
             this.accelIntervalMs = config.accelIntervalMs;
             if (wasRunning) {
@@ -354,7 +354,7 @@ export class SensorProcessor {
             }
         }
 
-        if (config.gyroIntervalMs !== undefined && config.gyroIntervalMs !== this.gyroIntervalMs) {
+        if (config.gyroIntervalMs != null && config.gyroIntervalMs !== this.gyroIntervalMs) {
             const wasRunning = this.gyroSensor || this.gyroDeviceMotionHandler;
             this.gyroIntervalMs = config.gyroIntervalMs;
             if (wasRunning) {
@@ -363,7 +363,7 @@ export class SensorProcessor {
             }
         }
 
-        if (config.orientationEnabled !== undefined) {
+        if (config.orientationEnabled != null) {
             this.orientationEnabled = config.orientationEnabled;
             if (config.orientationEnabled) {
                 this.startOrientation(targetDeviceId);
@@ -371,7 +371,7 @@ export class SensorProcessor {
                 this.stopOrientation();
             }
         }
-        if (config.orientationIntervalMs !== undefined) {
+        if (config.orientationIntervalMs != null) {
             const nextInterval = Math.max(10, config.orientationIntervalMs);
             if (nextInterval !== this.orientationIntervalMs) {
                 const wasRunning = !!(this.orientationSensor || this.orientationDeviceHandler || this.orientationTimer);

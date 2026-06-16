@@ -3,19 +3,24 @@
 
 import { ControlScheme } from '../../bmrender/proto/scheme';
 import { mergeSchemes } from '../../bmrender/proto/schemeExtensions';
-import { WasmEngineBridge } from './wasmEngineBridge';
-import type { BmAction } from '../../types';
+import type { BmEngine } from '../../bmEngine';
 
 export class SchemeService {
-    private engine: WasmEngineBridge;
+    private engine: BmEngine;
     private lastUpdateXml: string | null = null;
     private currentScheme: ControlScheme | null = null;
 
-    constructor(engine: WasmEngineBridge) {
+    constructor(engine: BmEngine) {
         this.engine = engine;
     }
 
-    parseChunk(action: BmAction & { type: 'ChunkComplete' }): { scheme: ControlScheme | null, xml: string | null, isUpdate: boolean } {
+    setBaseScheme(scheme: ControlScheme): ControlScheme {
+        this.lastUpdateXml = null;
+        this.currentScheme = scheme;
+        return scheme;
+    }
+
+    parseChunk(action: { setId: string, blob: Uint8Array }): { scheme: ControlScheme | null, xml: string | null, isUpdate: boolean } {
         if (action.blob.length === 0) return { scheme: null, xml: null, isUpdate: false };
 
         let scheme: ControlScheme | null = null;

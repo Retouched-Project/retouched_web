@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import { WasmEngineBridge } from './engine/wasmEngineBridge';
-import type { BmAction } from '../types';
+import type { BmEngine } from '../bmEngine';
+import type { BmOutgoing } from '../types';
 
 export interface TouchPoint {
     id: number;
@@ -12,8 +12,8 @@ export interface TouchPoint {
 }
 
 export class TouchProcessor {
-    private engine: WasmEngineBridge;
-    private processActions: (actions: BmAction[]) => void;
+    private engine: BmEngine;
+    private processActions: (actions: BmOutgoing[]) => void;
 
     private pendingTouches = new Map<number, TouchPoint>();
     private pendingScreenW = 0;
@@ -25,7 +25,7 @@ export class TouchProcessor {
     private touchIntervalMs = 100;
     private touchReliability = 0;
 
-    constructor(engine: WasmEngineBridge, processActions: (actions: BmAction[]) => void) {
+    constructor(engine: BmEngine, processActions: (actions: BmOutgoing[]) => void) {
         this.engine = engine;
         this.processActions = processActions;
     }
@@ -76,8 +76,8 @@ export class TouchProcessor {
             id: t.id,
             x: t.x,
             y: t.y,
-            screen_width: this.pendingScreenW,
-            screen_height: this.pendingScreenH,
+            screenWidth: this.pendingScreenW,
+            screenHeight: this.pendingScreenH,
             state: stateMap[t.state] || "Stationary"
         }));
 
@@ -97,10 +97,10 @@ export class TouchProcessor {
         }
     }
 
-    configure(config: { touchReliability?: number, touchEnabled?: boolean, touchIntervalMs?: number }) {
-        if (config.touchReliability !== undefined) this.touchReliability = config.touchReliability;
-        if (config.touchEnabled !== undefined) this.touchEnabled = config.touchEnabled;
-        if (config.touchIntervalMs !== undefined) this.touchIntervalMs = config.touchIntervalMs;
+    configure(config: { touchReliability?: number | null, touchEnabled?: boolean | null, touchIntervalMs?: number | null }) {
+        if (config.touchReliability != null) this.touchReliability = config.touchReliability;
+        if (config.touchEnabled != null) this.touchEnabled = config.touchEnabled;
+        if (config.touchIntervalMs != null) this.touchIntervalMs = config.touchIntervalMs;
     }
 
     reset() {

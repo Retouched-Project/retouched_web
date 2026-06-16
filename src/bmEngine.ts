@@ -2,7 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import init, { BmEngineWasm, init_panic_hook, make_handshake_bytes, parse_control_scheme_xml } from './wasm/bronze_monkey';
-import type { BmAction, BmRegistryInfo } from './types';
+import type { BmOutgoing, BmProcessOutput, BmRegistryInfo } from './types';
 
 export class BmEngine {
     private wasmEngine: BmEngineWasm | null = null;
@@ -17,16 +17,28 @@ export class BmEngine {
     }
 
     private async _doInit() {
-        await init();
-        init_panic_hook();
-        this.wasmEngine = new BmEngineWasm();
-        this.initialized = true;
+        console.log('[BmEngine] Initializing WASM engine singleton...');
+        try {
+            await init();
+            init_panic_hook();
+            this.wasmEngine = new BmEngineWasm();
+            this.initialized = true;
+            console.log('[BmEngine] WASM engine initialized successfully');
+        } catch (err) {
+            console.error('[BmEngine] WASM engine initialization failed:', err);
+            this.initPromise = null;
+            throw err;
+        }
+    }
+
+    private get engine(): BmEngineWasm {
+        if (!this.wasmEngine) throw new Error("Engine not initialized");
+        return this.wasmEngine;
     }
 
     initLocalDevice(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
         try {
-            this.wasmEngine.init_local_device(id, name, typeCode, address, unreliablePort, reliablePort);
+            this.engine.init_local_device(id, name, typeCode, address, unreliablePort, reliablePort);
         } catch (e) {
             console.error("[BmEngine] init_local_device WASM panic:", e);
             throw e;
@@ -39,115 +51,109 @@ export class BmEngine {
     }
 
     registerDevice(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
         try {
-            this.wasmEngine.register_device(id, name, typeCode, address, unreliablePort, reliablePort);
+            this.engine.register_device(id, name, typeCode, address, unreliablePort, reliablePort);
         } catch (e) {
             console.error("[BmEngine] register_device WASM panic:", e);
             throw e;
         }
     }
 
-    processIncoming(data: Uint8Array): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.process_incoming(data) as BmAction[];
+    processIncoming(data: Uint8Array): BmProcessOutput {
+        return this.engine.process_incoming(data) as BmProcessOutput;
     }
 
-    processIncomingUdp(data: Uint8Array): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.process_incoming_udp(data) as BmAction[];
+    processIncomingUdp(data: Uint8Array): BmProcessOutput {
+        return this.engine.process_incoming_udp(data) as BmProcessOutput;
     }
 
-    makeRegistryRegister(targetId: string, info: BmRegistryInfo, domain: string): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_registry_register(
+    emit(command: unknown): BmOutgoing[] {
+        return this.engine.emit(command) as BmOutgoing[];
+    }
+
+    registerButtonHandlers(handlers: string[]) {
+        this.engine.register_button_handlers(handlers);
+    }
+
+    clearButtonHandlers() {
+        this.engine.clear_button_handlers();
+    }
+
+    makeRegistryRegister(targetId: string, info: BmRegistryInfo, domain: string): BmOutgoing[] {
+        return this.engine.make_registry_register(
             targetId,
             info.slotId,
             info.appId,
-            info.currentPlayers,
-            info.maxPlayers,
-            info.device.id,
-            info.device.name,
-            info.device.device_type,
-            info.device.address.address,
-            info.device.address.unreliable_port,
-            info.device.address.reliable_port,
+            info.currentPlayers ?? 0,
+            info.maxPlayers ?? 0,
+            info.device.deviceId,
+            info.device.deviceName,
+            info.device.deviceType,
+            info.deviceAddress.address,
+            info.deviceAddress.unreliablePort,
+            info.deviceAddress.reliablePort,
             domain
-        ) as BmAction[];
+        ) as BmOutgoing[];
     }
 
-    makeRegistryList(targetId: string): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_registry_list(targetId) as BmAction[];
+    makeRegistryList(targetId: string): BmOutgoing[] {
+        return this.engine.make_registry_list(targetId) as BmOutgoing[];
     }
 
-    makeDeviceConnectRequested(targetId: string, game: BmRegistryInfo, controller: BmRegistryInfo): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_device_connect_requested(
+    makeDeviceConnectRequested(targetId: string, game: BmRegistryInfo, controller: BmRegistryInfo): BmOutgoing[] {
+        return this.engine.make_device_connect_requested(
             targetId,
-            game.slotId, game.appId, game.device.id, game.device.name, game.device.device_type, game.device.address.address, game.device.address.unreliable_port, game.device.address.reliable_port,
-            controller.slotId, controller.appId, controller.device.id, controller.device.name, controller.device.device_type, controller.device.address.address, controller.device.address.unreliable_port, controller.device.address.reliable_port
-        ) as BmAction[];
+            game.slotId, game.appId, game.device.deviceId, game.device.deviceName, game.device.deviceType, game.deviceAddress.address, game.deviceAddress.unreliablePort, game.deviceAddress.reliablePort,
+            controller.slotId, controller.appId, controller.device.deviceId, controller.device.deviceName, controller.device.deviceType, controller.deviceAddress.address, controller.deviceAddress.unreliablePort, controller.deviceAddress.reliablePort
+        ) as BmOutgoing[];
     }
 
-    makeSetControlMode(targetId: string, mode: number, text?: string): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_set_control_mode(targetId, mode, text) as BmAction[];
+    makeSetControlMode(targetId: string, mode: number, text?: string): BmOutgoing[] {
+        return this.engine.make_set_control_mode(targetId, mode, text) as BmOutgoing[];
     }
 
-    makeEnableAccelerometer(targetId: string, enabled: boolean, interval?: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_enable_accelerometer(targetId, enabled, interval) as BmAction[];
+    makeEnableAccelerometer(targetId: string, enabled: boolean, interval?: number): BmOutgoing[] {
+        return this.engine.make_enable_accelerometer(targetId, enabled, interval) as BmOutgoing[];
     }
 
-    makeAccel(targetId: string, x: number, y: number, z: number, reliability: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_accel(targetId, x, y, z, reliability) as BmAction[];
+    makeAccel(targetId: string, x: number, y: number, z: number, reliability: number): BmOutgoing[] {
+        return this.engine.make_accel(targetId, x, y, z, reliability) as BmOutgoing[];
     }
 
-    makeGyro(targetId: string, x: number, y: number, z: number, reliability: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_gyro(targetId, x, y, z, reliability) as BmAction[];
+    makeGyro(targetId: string, x: number, y: number, z: number, reliability: number): BmOutgoing[] {
+        return this.engine.make_gyro(targetId, x, y, z, reliability) as BmOutgoing[];
     }
 
-    makeOrientation(targetId: string, x: number, y: number, z: number, w: number, reliability: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_orientation(targetId, x, y, z, w, reliability) as BmAction[];
+    makeOrientation(targetId: string, x: number, y: number, z: number, w: number, reliability: number): BmOutgoing[] {
+        return this.engine.make_orientation(targetId, x, y, z, w, reliability) as BmOutgoing[];
     }
 
-    makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_button_invoke(targetId, handler, pressed) as BmAction[];
+    makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmOutgoing[] {
+        return this.engine.make_button_invoke(targetId, handler, pressed) as BmOutgoing[];
     }
 
-    makeDpadUpdate(targetId: string, x: number, y: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_dpad_update(targetId, x, y) as BmAction[];
+    makeDpadUpdate(targetId: string, x: number, y: number): BmOutgoing[] {
+        return this.engine.make_dpad_update(targetId, x, y) as BmOutgoing[];
     }
 
-    makeRequestXml(targetId: string, width: number, height: number, deviceId: string): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_request_xml(targetId, width, height, deviceId) as BmAction[];
+    makeRequestXml(targetId: string, width: number, height: number, deviceId: string): BmOutgoing[] {
+        return this.engine.make_request_xml(targetId, width, height, deviceId) as BmOutgoing[];
     }
 
-    makeSetCapabilities(targetId: string, caps: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_set_capabilities(targetId, caps) as BmAction[];
+    makeSetCapabilities(targetId: string, caps: number): BmOutgoing[] {
+        return this.engine.make_set_capabilities(targetId, caps) as BmOutgoing[];
     }
 
-    makeOnControlSchemeParsed(targetId: string, deviceId: string): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_on_control_scheme_parsed(targetId, deviceId) as BmAction[];
+    makeOnControlSchemeParsed(targetId: string, deviceId: string): BmOutgoing[] {
+        return this.engine.make_on_control_scheme_parsed(targetId, deviceId) as BmOutgoing[];
     }
 
-    makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screen_width: number, screen_height: number, state: number | string }>, reliability: number): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_touch_set(targetId, points, reliability) as BmAction[];
+    makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>, reliability: number): BmOutgoing[] {
+        return this.engine.make_touch_set(targetId, points, reliability) as BmOutgoing[];
     }
 
-    makeSimpleInvoke(targetId: string, method: string, returnVal?: string | null, param?: string | null): BmAction[] {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return this.wasmEngine.make_simple_invoke(targetId, method, returnVal, param) as BmAction[];
+    makeSimpleInvoke(targetId: string, method: string, returnVal?: string | null, param?: string | null): BmOutgoing[] {
+        return this.engine.make_simple_invoke(targetId, method, returnVal, param) as BmOutgoing[];
     }
 
     parseControlSchemeXml(xml: string): Uint8Array {

@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import { WasmEngineBridge } from './engine/wasmEngineBridge';
+import type { BmEngine } from '../bmEngine';
 import { DeviceInfo } from './deviceInfo';
-import type { BmRegistryInfo, BmAction } from '../types';
-import { RegistryEventKind } from '../types';
+import type { BmRegistryInfo } from '../types';
 
 export class RegistryClient {
-    private engine: WasmEngineBridge;
+    private engine: BmEngine;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private onStateUpdate: (partial: any) => void;
     private registerResolve: (() => void) | null = null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(engine: WasmEngineBridge, onStateUpdate: (partial: any) => void) {
+    constructor(engine: BmEngine, onStateUpdate: (partial: any) => void) {
         this.engine = engine;
         this.onStateUpdate = onStateUpdate;
     }
@@ -63,24 +62,19 @@ export class RegistryClient {
         });
 
         const appId = DeviceInfo.getAppId();
+        const selfAddress = { address: host, unreliablePort: 0, reliablePort: port };
         const selfInfo: BmRegistryInfo = {
             slotId: 0,
             appId: appId,
             currentPlayers: 0,
             maxPlayers: 0,
-            deviceType: typeCode,
-            deviceId: deviceId,
-            deviceName: deviceName,
             device: {
-                id: deviceId,
-                name: deviceName,
-                device_type: typeCode,
-                address: {
-                    address: host,
-                    reliable_port: port,
-                    unreliable_port: 0
-                }
-            }
+                deviceId: deviceId,
+                deviceName: deviceName,
+                deviceType: typeCode,
+                address: selfAddress,
+            },
+            deviceAddress: selfAddress,
         };
 
         console.log('[RegistryClient] Sending registration request...');
@@ -96,78 +90,46 @@ export class RegistryClient {
         this.onStateUpdate({ actionsToProcess: listActions });
     }
 
-    processRegistryEvent(action: BmAction & { type: 'RegistryEvent' }, currentGames: BmRegistryInfo[]): void {
-        if (action.kind === RegistryEventKind.OnRegister || action.kind === RegistryEventKind.OnList) {
-            if (this.registerResolve) {
-                this.registerResolve();
-                this.registerResolve = null;
-            }
-        }
-
-        if (action.kind === RegistryEventKind.OnList || action.kind === RegistryEventKind.OnHostConnected || action.kind === RegistryEventKind.OnHostUpdate) {
-            const games = action.infos;
-            games.forEach(game => {
-                this.engine.registerDevice(
-                    game.device.id,
-                    game.device.name,
-                    game.device.device_type,
-                    game.device.address.address,
-                    game.device.address.unreliable_port,
-                    game.device.address.reliable_port
-                );
-            });
-
-            if (action.kind === RegistryEventKind.OnList) {
-                this.onStateUpdate({ games });
-            } else {
-                const updatedGames = [...currentGames];
-                games.forEach(game => {
-                    const idx = updatedGames.findIndex(g => g.deviceId === game.deviceId);
-                    if (idx >= 0) updatedGames[idx] = game;
-                    else updatedGames.push(game);
-                });
-                this.onStateUpdate({ games: updatedGames });
-            }
-        }
-
-        if (action.kind === RegistryEventKind.OnHostDisconnected) {
-            const removeIds = new Set(action.infos.map(g => g.deviceId));
-            const updatedGames = currentGames.filter(g => !removeIds.has(g.deviceId));
-            this.onStateUpdate({ games: updatedGames, disconnectedIds: Array.from(removeIds) });
+    // The controller's own registration (server replies onRegister) resolves the
+    // pending registerWithRegistry promise so the host-list request can proceed.
+    onRegistrationResult(): void {
+        if (this.registerResolve) {
+            this.registerResolve();
+            this.registerResolve = null;
         }
     }
 
-    handleInvoke(action: BmAction & { type: 'Invoke' }, currentGames: BmRegistryInfo[]): void {
-        if (action.method === 'onHostConnected' || action.method === 'onHostUpdate') {
-            const info = this.extractRegistryInfo(action.params);
-            if (info) {
-                this.engine.registerDevice(
-                    info.device.id,
-                    info.device.name,
-                    info.device.device_type,
-                    info.device.address.address,
-                    info.device.address.unreliable_port,
-                    info.device.address.reliable_port
-                );
-                const updatedGames = [...currentGames];
-                const idx = updatedGames.findIndex(g => g.deviceId === info.deviceId);
-                if (idx >= 0) updatedGames[idx] = info;
-                else updatedGames.push(info);
-                this.onStateUpdate({ games: updatedGames });
-            }
-        } else if (action.method === 'onHostDisconnected') {
-            const info = this.extractRegistryInfo(action.params);
-            const idToDelete = info ? info.deviceId : (action.params && typeof action.params[0] === 'string' ? action.params[0] : null);
-            if (idToDelete) {
-                const updatedGames = currentGames.filter(g => g.deviceId !== idToDelete);
-                this.onStateUpdate({ games: updatedGames, disconnectedIds: [idToDelete] });
-            }
-        }
+    // Full host-list snapshot (the server's onList reply to registry.list).
+    onHostsReceived(infos: BmRegistryInfo[]): void {
+        infos.forEach(game => this.registerGame(game));
+        this.onStateUpdate({ games: infos });
+        this.onRegistrationResult();
     }
 
-    private extractRegistryInfo(params: unknown[] | undefined): BmRegistryInfo | null {
-        if (!params || params.length === 0) return null;
-        const wrapper = params[0] as Record<string, Record<string, unknown>> | null;
-        return (wrapper?.Object?.BMRegistryInfo ?? wrapper?.BMRegistryInfo ?? null) as BmRegistryInfo | null;
+    // A single host appeared or had its info updated.
+    onHostUpsert(info: BmRegistryInfo, currentGames: BmRegistryInfo[]): void {
+        this.registerGame(info);
+        const updatedGames = [...currentGames];
+        const idx = updatedGames.findIndex(g => g.device.deviceId === info.device.deviceId);
+        if (idx >= 0) updatedGames[idx] = info;
+        else updatedGames.push(info);
+        this.onStateUpdate({ games: updatedGames });
+    }
+
+    onHostDisconnected(info: BmRegistryInfo, currentGames: BmRegistryInfo[]): void {
+        const removeId = info.device.deviceId;
+        const updatedGames = currentGames.filter(g => g.device.deviceId !== removeId);
+        this.onStateUpdate({ games: updatedGames, disconnectedIds: [removeId] });
+    }
+
+    private registerGame(game: BmRegistryInfo): void {
+        this.engine.registerDevice(
+            game.device.deviceId,
+            game.device.deviceName,
+            game.device.deviceType,
+            game.deviceAddress.address,
+            game.deviceAddress.unreliablePort,
+            game.deviceAddress.reliablePort
+        );
     }
 }

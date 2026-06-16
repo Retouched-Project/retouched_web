@@ -149,7 +149,9 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                         key={game.slotId}
                         style={styles.listItem}
                         onClick={() => {
-                            if (game.maxPlayers !== undefined && game.maxPlayers > 0 && game.currentPlayers !== undefined && game.currentPlayers >= game.maxPlayers) {
+                            const maxPlayers = game.maxPlayers ?? 0;
+                            const currentPlayers = game.currentPlayers ?? 0;
+                            if (maxPlayers > 0 && currentPlayers >= maxPlayers) {
                                 alert("Game is full");
                                 return;
                             }
@@ -159,7 +161,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                         <div style={styles.iconContainer}>
                             <img
                                 src={`/apps/icons/${game.appId}.png`}
-                                alt={game.deviceName}
+                                alt={game.device.deviceName}
                                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 onError={(e) => {
                                     const img = e.target as HTMLImageElement;
@@ -169,9 +171,9 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                             />
                         </div>
                         <div style={styles.textContainer}>
-                            <div style={styles.title}>{game.deviceName}</div>
+                            <div style={styles.title}>{game.device.deviceName}</div>
                         </div>
-                        <SlotWifiIcon slotId={game.slotId} currentPlayers={game.currentPlayers} maxPlayers={game.maxPlayers} />
+                        <SlotWifiIcon slotId={game.slotId} currentPlayers={game.currentPlayers ?? 0} maxPlayers={game.maxPlayers ?? 0} />
                     </div>
                 ))}
             </div>
