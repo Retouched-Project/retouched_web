@@ -58,6 +58,7 @@ export class GameClient {
 
     private capabilitiesOverride: number | null = null;
     private cachedCapabilities: number | null = null;
+    private touchEnabled: boolean | null = null;
 
     constructor(signalingUrl: string = '/offer') {
         this.transport = new WebRtcTransport(signalingUrl);
@@ -69,7 +70,7 @@ export class GameClient {
         this.protocol = new ProtocolCoordinator(this.engine, this.transport, {
             onEvent: (ev) => this.handleEvent(ev),
         });
-        this.schemes = new SchemeService(this.engine);
+        this.schemes = new SchemeService();
         this.touch = new TouchProcessor(this.engine, (a) => this.protocol.sendOutgoings(a, this.state.activeGame));
         this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.sendOutgoings(a, this.state.activeGame));
         this.sensors.onStatusChange = (status) => this.updateState({ sensorStatus: status });
@@ -242,9 +243,6 @@ export class GameClient {
             case 'ChunkComplete':
                 this.handleChunkComplete(ev);
                 break;
-            case 'ControlScheme':
-                this.handleControlScheme(ev);
-                break;
             case 'Vibrate':
                 VibrationService.vibrate();
                 break;
@@ -336,6 +334,7 @@ export class GameClient {
         this.touch.reset();
         this.sensors.reset();
         this.schemes.reset();
+        this.touchEnabled = null;
         this.updateState({ activeGame: null, scheme: null, progress: 0 });
     }
 
@@ -353,21 +352,22 @@ export class GameClient {
         if (!activeGame) return;
 
         this.touch.configure({
-            touchReliability: cfg.touchReliability,
             touchEnabled: cfg.touchEnabled,
             touchIntervalMs: cfg.touchIntervalMs
         });
 
         this.sensors.configure({
-            controlReliability: cfg.controlReliability,
             accelIntervalMs: cfg.accelIntervalMs,
             gyroIntervalMs: cfg.gyroIntervalMs,
             orientationEnabled: cfg.orientationEnabled,
             orientationIntervalMs: cfg.orientationIntervalMs
         }, activeGame.device.deviceId);
 
-        if (cfg.touchEnabled != null && this.state.scheme) {
-            this.updateState({ scheme: ControlScheme.create({ ...this.state.scheme, touchEnabled: cfg.touchEnabled }) });
+        if (cfg.touchEnabled != null) {
+            this.touchEnabled = cfg.touchEnabled;
+            if (this.state.scheme) {
+                this.updateState({ scheme: ControlScheme.create({ ...this.state.scheme, touchEnabled: cfg.touchEnabled }) });
+            }
         }
 
         if (cfg.accelEnabled != null) {
@@ -389,26 +389,19 @@ export class GameClient {
         }
     }
 
-    private handleControlScheme(ev: BmEvent & { type: 'ControlScheme' }) {
-        let scheme: ControlScheme;
-        try {
-            scheme = ControlScheme.decode(ev.scheme);
-        } catch (e) {
-            console.error('[GameClient] ControlScheme decode failed:', e);
-            return;
-        }
-        this.schemes.setBaseScheme(scheme);
-        this.updateState({ scheme, progress: 1.0 });
-        const activeGame = this.session.getActiveGame();
-        if (isAccelerometerEnabled(scheme) && activeGame) {
-            this.sensors.startAccel(activeGame.device.deviceId);
-        }
-        this.onSchemeParsed();
-    }
-
     private handleChunkComplete(ev: BmEvent & { type: 'ChunkComplete' }) {
-        const { scheme } = this.schemes.parseChunk({ setId: ev.setId, blob: ev.blob });
-        if (scheme) this.updateState({ scheme });
+        const { scheme, initial } = this.schemes.offer(ev.setId, ev.blob);
+        if (!scheme) return;
+        // Re-apply the runtime touch-enable state
+        if (this.touchEnabled != null) scheme.touchEnabled = this.touchEnabled;
+        this.updateState({ scheme, progress: 1.0 });
+        if (initial) {
+            const activeGame = this.session.getActiveGame();
+            if (isAccelerometerEnabled(scheme) && activeGame) {
+                this.sensors.startAccel(activeGame.device.deviceId);
+            }
+            this.onSchemeParsed();
+        }
     }
 
     private onSchemeParsed() {

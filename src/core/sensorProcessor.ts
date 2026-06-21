@@ -30,8 +30,6 @@ export class SensorProcessor {
     private lastOrientationSentAt = 0;
     private orientationIntervalMs = 50;
 
-    private controlReliability = 0;
-
     private static permissionGranted: boolean | null = null;
     onStatusChange?: (status: SensorStatus) => void;
 
@@ -95,8 +93,7 @@ export class SensorProcessor {
                         targetDeviceId,
                         (s.x ?? 0) / -9.80665,
                         (s.y ?? 0) / -9.80665,
-                        (s.z ?? 0) / -9.80665,
-                        this.controlReliability
+                        (s.z ?? 0) / -9.80665
                     ));
                 };
                 s.start();
@@ -122,8 +119,7 @@ export class SensorProcessor {
                     targetDeviceId,
                     (a.x ?? 0) / -9.80665,
                     (a.y ?? 0) / -9.80665,
-                    (a.z ?? 0) / -9.80665,
-                    this.controlReliability
+                    (a.z ?? 0) / -9.80665
                 ));
             };
             window.addEventListener('devicemotion', this.accelDeviceMotionHandler);
@@ -175,8 +171,7 @@ export class SensorProcessor {
                         targetDeviceId,
                         s.x ?? 0,
                         s.y ?? 0,
-                        s.z ?? 0,
-                        this.controlReliability
+                        s.z ?? 0
                     ));
                 };
                 s.start();
@@ -202,8 +197,7 @@ export class SensorProcessor {
                     targetDeviceId,
                     (r.alpha ?? 0) * d2r,
                     (r.beta ?? 0) * d2r,
-                    (r.gamma ?? 0) * d2r,
-                    this.controlReliability
+                    (r.gamma ?? 0) * d2r
                 ));
             };
             window.addEventListener('devicemotion', this.gyroDeviceMotionHandler);
@@ -252,8 +246,7 @@ export class SensorProcessor {
                     this.lastOrientationSentAt = aligned;
                     this.processActions(this.engine.makeOrientation(
                         targetDeviceId,
-                        dx, dy, dz, dw,
-                        this.controlReliability
+                        dx, dy, dz, dw
                     ));
                 };
                 s.start();
@@ -294,8 +287,7 @@ export class SensorProcessor {
                 this.lastOrientationSentAt = aligned;
                 this.processActions(this.engine.makeOrientation(
                     targetDeviceId,
-                    dx, dy, dz, dw,
-                    this.controlReliability
+                    dx, dy, dz, dw
                 ));
             };
             window.addEventListener('deviceorientation', handler);
@@ -309,8 +301,7 @@ export class SensorProcessor {
                 const q = this.computeQuaternion(this.lastAccelEvent.x, this.lastAccelEvent.y, this.lastAccelEvent.z);
                 this.processActions(this.engine.makeOrientation(
                     targetDeviceId,
-                    q[0], q[1], q[2], q[3],
-                    this.controlReliability
+                    q[0], q[1], q[2], q[3]
                 ));
             }
         }, this.orientationIntervalMs);
@@ -342,9 +333,7 @@ export class SensorProcessor {
         return [sr * cp, cr * sp, sr * sp, cr * cp]; // Simplified for yaw=0
     }
 
-    configure(config: { controlReliability?: number | null, accelIntervalMs?: number | null, gyroIntervalMs?: number | null, orientationEnabled?: boolean | null, orientationIntervalMs?: number | null }, targetDeviceId: string) {
-        if (config.controlReliability != null) this.controlReliability = config.controlReliability;
-
+    configure(config: { accelIntervalMs?: number | null, gyroIntervalMs?: number | null, orientationEnabled?: boolean | null, orientationIntervalMs?: number | null }, targetDeviceId: string) {
         if (config.accelIntervalMs != null && config.accelIntervalMs !== this.accelIntervalMs) {
             const wasRunning = this.accelSensor || this.accelDeviceMotionHandler;
             this.accelIntervalMs = config.accelIntervalMs;
@@ -388,5 +377,12 @@ export class SensorProcessor {
         this.stopAccel();
         this.stopGyro();
         this.stopOrientation();
+        this.accelIntervalMs = 100;
+        this.gyroIntervalMs = 100;
+        this.orientationIntervalMs = 50;
+        this.orientationEnabled = false;
+        this.lastAccelSentAt = 0;
+        this.lastGyroSentAt = 0;
+        this.lastOrientationSentAt = 0;
     }
 }

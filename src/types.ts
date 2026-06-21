@@ -45,8 +45,6 @@ export interface BmControlConfig {
     accelIntervalMs?: number | null;
     gyroIntervalMs?: number | null;
     orientationIntervalMs?: number | null;
-    touchReliability?: number | null;
-    controlReliability?: number | null;
     controlMode?: number | null;
     portalId?: string | null;
     returnAppId?: string | null;
@@ -70,8 +68,7 @@ export type BmEvent =
     | ({ type: 'ControlConfig' } & BmControlConfig)
     | { type: 'Invoke'; sender: string | null; method: string; returnMethod: string | null; params: unknown[] }
     | { type: 'ChunkProgress'; deviceId: string; setId: string; current: number; total: number }
-    | { type: 'ChunkComplete'; deviceId: string; setId: string; blob: Uint8Array }
-    | { type: 'ControlScheme'; deviceId: string; scheme: Uint8Array };
+    | { type: 'ChunkComplete'; deviceId: string; setId: string; blob: Uint8Array };
 
 export interface BmProcessOutput {
     events: BmEvent[];

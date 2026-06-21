@@ -23,7 +23,6 @@ export class TouchProcessor {
 
     private touchEnabled = true;
     private touchIntervalMs = 100;
-    private touchReliability = 0;
 
     constructor(engine: BmEngine, processActions: (actions: BmOutgoing[]) => void) {
         this.engine = engine;
@@ -89,16 +88,18 @@ export class TouchProcessor {
             }
         });
 
-        const actions = this.engine.makeTouchSet(targetDeviceId, points, this.touchReliability);
+        const actions = this.engine.makeTouchSet(targetDeviceId, points);
         this.processActions(actions);
 
-        if (retryCount < 3 && this.touchReliability === 0 && !this.touchFlushTimer && this.pendingTouches.size > 0) {
+        // Only unreliable (UDP) touches need resending to survive packet loss; the
+        // engine resolves the reliability, so derive the retry need from it.
+        const unreliable = actions.some(a => a.reliability === 0);
+        if (retryCount < 3 && unreliable && !this.touchFlushTimer && this.pendingTouches.size > 0) {
             this.touchFlushTimer = setTimeout(() => this.flushTouches(targetDeviceId, retryCount + 1), this.touchIntervalMs);
         }
     }
 
-    configure(config: { touchReliability?: number | null, touchEnabled?: boolean | null, touchIntervalMs?: number | null }) {
-        if (config.touchReliability != null) this.touchReliability = config.touchReliability;
+    configure(config: { touchEnabled?: boolean | null, touchIntervalMs?: number | null }) {
         if (config.touchEnabled != null) this.touchEnabled = config.touchEnabled;
         if (config.touchIntervalMs != null) this.touchIntervalMs = config.touchIntervalMs;
     }
@@ -110,5 +111,7 @@ export class TouchProcessor {
         }
         this.pendingTouches.clear();
         this.lastTouchSentAt = 0;
+        this.touchEnabled = true;
+        this.touchIntervalMs = 100;
     }
 }

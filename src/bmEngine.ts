@@ -116,16 +116,16 @@ export class BmEngine {
         return this.engine.make_enable_accelerometer(targetId, enabled, interval) as BmOutgoing[];
     }
 
-    makeAccel(targetId: string, x: number, y: number, z: number, reliability: number): BmOutgoing[] {
-        return this.engine.make_accel(targetId, x, y, z, reliability) as BmOutgoing[];
+    makeAccel(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
+        return this.engine.make_accel(targetId, x, y, z) as BmOutgoing[];
     }
 
-    makeGyro(targetId: string, x: number, y: number, z: number, reliability: number): BmOutgoing[] {
-        return this.engine.make_gyro(targetId, x, y, z, reliability) as BmOutgoing[];
+    makeGyro(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
+        return this.engine.make_gyro(targetId, x, y, z) as BmOutgoing[];
     }
 
-    makeOrientation(targetId: string, x: number, y: number, z: number, w: number, reliability: number): BmOutgoing[] {
-        return this.engine.make_orientation(targetId, x, y, z, w, reliability) as BmOutgoing[];
+    makeOrientation(targetId: string, x: number, y: number, z: number, w: number): BmOutgoing[] {
+        return this.engine.make_orientation(targetId, x, y, z, w) as BmOutgoing[];
     }
 
     makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmOutgoing[] {
@@ -148,8 +148,8 @@ export class BmEngine {
         return this.engine.make_on_control_scheme_parsed(targetId, deviceId) as BmOutgoing[];
     }
 
-    makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>, reliability: number): BmOutgoing[] {
-        return this.engine.make_touch_set(targetId, points, reliability) as BmOutgoing[];
+    makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>): BmOutgoing[] {
+        return this.engine.make_touch_set(targetId, points) as BmOutgoing[];
     }
 
     makeSimpleInvoke(targetId: string, method: string, returnVal?: string | null, param?: string | null): BmOutgoing[] {

@@ -54,33 +54,6 @@ export function getOptions(scheme: ControlScheme): ContextMenuOption[] {
     return scheme.options || [];
 }
 
-export function mergeSchemes(target: ControlScheme, source: ControlScheme): ControlScheme {
-    const newScheme: ControlScheme = { ...target };
-
-    if (source.version !== undefined && source.version !== "") newScheme.version = source.version;
-    if (source.orientation !== undefined && source.orientation !== "") newScheme.orientation = source.orientation;
-
-    if (source.touchEnabled !== undefined) newScheme.touchEnabled = source.touchEnabled;
-    if (source.accelerometerEnabled !== undefined) newScheme.accelerometerEnabled = source.accelerometerEnabled;
-
-    if (source.width !== undefined && source.width !== 0) newScheme.width = source.width;
-    if (source.height !== undefined && source.height !== 0) newScheme.height = source.height;
-
-    if (source.resources && source.resources.length > 0) {
-        newScheme.resources = [...source.resources];
-    }
-
-    if (source.displayObjects && source.displayObjects.length > 0) {
-        newScheme.displayObjects = [...source.displayObjects];
-    }
-
-    if (source.options && source.options.length > 0) {
-        newScheme.options = [...source.options];
-    }
-
-    return newScheme;
-}
-
 export function getSamplingMode(obj: DisplayObject): SamplingMode {
     if (obj.samplingMode === 'nearest') return SamplingMode.NearestNeighbor;
     return SamplingMode.Bilinear;
