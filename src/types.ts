@@ -36,6 +36,8 @@ export interface BmOutgoing {
     payload: Uint8Array;
 }
 
+export type ControlMode = 'Gamepad' | 'Keyboard' | 'Navigation' | 'Wait';
+
 export interface BmControlConfig {
     touchEnabled?: boolean | null;
     accelEnabled?: boolean | null;
@@ -45,7 +47,7 @@ export interface BmControlConfig {
     accelIntervalMs?: number | null;
     gyroIntervalMs?: number | null;
     orientationIntervalMs?: number | null;
-    controlMode?: number | null;
+    controlMode?: ControlMode | null;
     portalId?: string | null;
     returnAppId?: string | null;
 }

@@ -2,7 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import init, { BmEngineWasm, init_panic_hook, make_handshake_bytes, parse_control_scheme_xml } from './wasm/bronze_monkey';
-import type { BmOutgoing, BmProcessOutput, BmRegistryInfo } from './types';
+import type { BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
 
 export class BmEngine {
     private wasmEngine: BmEngineWasm | null = null;
@@ -108,7 +108,7 @@ export class BmEngine {
         ) as BmOutgoing[];
     }
 
-    makeSetControlMode(targetId: string, mode: number, text?: string): BmOutgoing[] {
+    makeSetControlMode(targetId: string, mode: ControlMode, text?: string): BmOutgoing[] {
         return this.engine.make_set_control_mode(targetId, mode, text) as BmOutgoing[];
     }
 
