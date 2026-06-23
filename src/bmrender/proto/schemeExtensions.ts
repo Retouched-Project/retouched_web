@@ -95,5 +95,5 @@ export function getDisplayObjectLeft(obj: DisplayObject): number { return obj.le
 export function getDisplayObjectWidth(obj: DisplayObject): number { return obj.width || 0.0; }
 export function getDisplayObjectHeight(obj: DisplayObject): number { return obj.height || 0.0; }
 
-export function getDisplayObjectDeadzone(obj: DisplayObject): number { return obj.deadzone || 0.25; }
+export function getDisplayObjectDeadzone(obj: DisplayObject): number { return obj.deadzone ?? 0.25; }
 
