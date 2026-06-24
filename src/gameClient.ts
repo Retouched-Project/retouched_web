@@ -103,6 +103,10 @@ export class GameClient {
         this.updateState(partial);
     }
 
+    get activeAppId(): string | null {
+        return this.session.getActiveGame()?.appId ?? null;
+    }
+
     addListener(callback: StateCallback) {
         this.listeners.push(callback);
         callback(this.state);

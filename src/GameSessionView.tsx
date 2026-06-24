@@ -8,6 +8,7 @@ import type { SensorStatus } from './core/sensorProcessor';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { getOptions, getRotation, ControlOrientation } from './bmrender/proto/schemeExtensions';
 import { BmRenderView } from './bmrender/BmRenderView';
+import { APP_ID_ROTATE_WHITELIST } from './bmrender/appIdRotateWhitelist';
 import { UnlockSlider } from './bmrender/controls/UnlockSlider';
 import type { UnlockSliderHandle } from './bmrender/controls/UnlockSlider';
 import { LoadingLogo } from './LoadingLogo';
@@ -102,9 +103,17 @@ export const GameSessionView: React.FC<Props> = ({
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
-    const forceRotate = !!scheme
-        && getRotation(scheme) === ControlOrientation.Landscape
-        && viewport.h > viewport.w;
+    // Whitelisted games mislabel a portrait controller as landscape thus treat them
+    // as portrait so the device orientation, gear and overlays follow portrait
+    const whitelisted = !!client.activeAppId && APP_ID_ROTATE_WHITELIST.has(client.activeAppId);
+    const schemeLandscape = !!scheme && getRotation(scheme) === ControlOrientation.Landscape;
+    // forceRotate drives the overlay/gear CSS rotation (fake landscape). 
+    // It must use the effective orientation so whitelisted
+    // games keep portrait overlays.
+    const forceRotate = schemeLandscape && !whitelisted && viewport.h > viewport.w;
+    // The canvas content rotates either to fake landscape, or to turn a
+    // whitelisted game's landscape-dimensioned content into portrait.
+    const rotateContent = forceRotate || (schemeLandscape && whitelisted);
 
     const handleUnlocked = useCallback(() => {
         client.sendPause();
@@ -129,7 +138,7 @@ export const GameSessionView: React.FC<Props> = ({
         client.sendResume();
     }, [client]);
 
-    const isLandscape = scheme ? getRotation(scheme) === ControlOrientation.Landscape : false;
+    const isLandscape = schemeLandscape && !whitelisted; // effective orientation
     const sliderRightOffset = isLandscape ? 60 : 12;
 
     useEffect(() => {
@@ -188,7 +197,8 @@ export const GameSessionView: React.FC<Props> = ({
                 floatingDpadEnabled={floatingDpadEnabled}
                 smartWidescreenEnabled={smartWidescreenEnabled}
                 preserveDpadDragEnabled={preserveDpadDragEnabled}
-                forceRotate={forceRotate}
+                forceRotate={rotateContent}
+                whitelisted={whitelisted}
             />
 
             {/* Rotation wrapper for overlays */}

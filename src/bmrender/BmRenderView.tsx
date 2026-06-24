@@ -20,9 +20,10 @@ interface Props {
     smartWidescreenEnabled: boolean;
     preserveDpadDragEnabled: boolean;
     forceRotate: boolean;
+    whitelisted: boolean;
 }
 
-export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, smartWidescreenEnabled, preserveDpadDragEnabled, forceRotate }) => {
+export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, smartWidescreenEnabled, preserveDpadDragEnabled, forceRotate, whitelisted }) => {
     const viewport = useViewportSize();
     const containerRef = useRef<HTMLDivElement>(null);
     const [scheme, setScheme] = useState<ControlScheme | null>(null);
@@ -82,6 +83,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
             let workingScheme = scheme;
             let stretched = false;
             if (smartWidescreenEnabled &&
+                !whitelisted &&
                 rotation === ControlOrientation.Landscape &&
                 baseW <= 480 &&
                 (scheme.displayObjects || []).some(o => o.type === 'dpad')) {
@@ -168,7 +170,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
 
         loadAndFlip();
 
-    }, [scheme, smartWidescreenEnabled, client]);
+    }, [scheme, smartWidescreenEnabled, client, whitelisted]);
 
     const handleButtonPress = useCallback((handler: string, pressed: boolean) => {
         if (pressed) {
