@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import type { BmEvent, BmControlConfig, BmRegistryInfo } from './types';
+import type { BmEvent, BmControlConfig, BmRegistryInfo, ControlMode } from './types';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { isAccelerometerEnabled } from './bmrender/proto/schemeExtensions';
 import { assetManager } from './bmrender/assetManager';
@@ -24,6 +24,8 @@ export interface GameClientState {
     scheme: ControlScheme | null;
     port: number;
     sensorStatus?: SensorStatus;
+    controlMode?: ControlMode | null;
+    startString?: string | null;
 }
 
 export type StateCallback = (state: GameClientState) => void;
@@ -314,6 +316,16 @@ export class GameClient {
         }
     }
 
+    // Reports one incremental text edit in KEYBOARD mode: the inserted substring,
+    // an empty string for a deletion, or "\n" for enter.
+    sendKeyString(key: string) {
+        const activeGame = this.session.getActiveGame();
+        if (activeGame) {
+            const outgoings = this.engine.emit({ type: 'SendKeyString', target: activeGame.device.deviceId, key });
+            this.protocol.sendOutgoings(outgoings, activeGame);
+        }
+    }
+
     sendPause() { this.session.setPaused(true, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
     sendResume() { this.session.setPaused(false, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
 
@@ -354,6 +366,11 @@ export class GameClient {
     private handleControlConfig(cfg: BmControlConfig) {
         const activeGame = this.session.getActiveGame();
         if (!activeGame) return;
+
+        if (cfg.controlMode != null) {
+            // startString is the keyboard's initial text; only KEYBOARD mode sends it.
+            this.updateState({ controlMode: cfg.controlMode, startString: cfg.startString ?? '' });
+        }
 
         this.touch.configure({
             touchEnabled: cfg.touchEnabled,

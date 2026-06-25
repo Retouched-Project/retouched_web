@@ -50,6 +50,7 @@ export interface BmControlConfig {
     controlMode?: ControlMode | null;
     portalId?: string | null;
     returnAppId?: string | null;
+    startString?: string | null;
 }
 
 export type BmEvent =

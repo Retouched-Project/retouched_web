@@ -5,6 +5,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import type { GameClient } from './gameClient';
 import type { GameClientState } from './gameClient';
 import type { SensorStatus } from './core/sensorProcessor';
+import type { ControlMode } from './types';
+import { KeyboardOverlay } from './KeyboardOverlay';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { getOptions, getRotation, ControlOrientation } from './bmrender/proto/schemeExtensions';
 import { BmRenderView } from './bmrender/BmRenderView';
@@ -53,12 +55,16 @@ export const GameSessionView: React.FC<Props> = ({
     const [showPauseMenu, setShowPauseMenu] = useState(false);
     const [sensorStatus, setSensorStatus] = useState<SensorStatus>('idle');
     const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set());
+    const [controlMode, setControlMode] = useState<ControlMode | null>(null);
+    const [startString, setStartString] = useState('');
 
     useEffect(() => {
         const handler = (state: GameClientState) => {
             setScheme(state.scheme ?? null);
             setProgress(state.progress);
             if (state.sensorStatus) setSensorStatus(state.sensorStatus);
+            setControlMode(state.controlMode ?? null);
+            if (state.startString != null) setStartString(state.startString);
             if (!state.activeGame) {
                 onDisconnect();
             }
@@ -200,6 +206,15 @@ export const GameSessionView: React.FC<Props> = ({
                 forceRotate={rotateContent}
                 whitelisted={whitelisted}
             />
+
+            {/* KEYBOARD control mode: text input over the controls */}
+            {controlMode === 'Keyboard' && (
+                <KeyboardOverlay
+                    key={startString}
+                    initialText={startString}
+                    onKey={(k) => client.sendKeyString(k)}
+                />
+            )}
 
             {/* Rotation wrapper for overlays */}
             <div style={forceRotate ? {
