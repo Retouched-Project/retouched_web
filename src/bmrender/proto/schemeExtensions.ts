@@ -90,6 +90,10 @@ export function getAssetRef(obj: DisplayObject, name: string): number {
     return -1;
 }
 
+export function hasAssets(obj: DisplayObject): boolean {
+    return (obj.assets || []).length > 0;
+}
+
 export function getDisplayObjectTop(obj: DisplayObject): number { return obj.top || 0.0; }
 export function getDisplayObjectLeft(obj: DisplayObject): number { return obj.left || 0.0; }
 export function getDisplayObjectWidth(obj: DisplayObject): number { return obj.width || 0.0; }

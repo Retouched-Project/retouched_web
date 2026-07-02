@@ -9,6 +9,7 @@ import {
     ControlOrientation,
 } from './proto/schemeExtensions';
 import { assetManager } from './assetManager';
+import { loadBuiltInDpadSkin } from './controls/dpadSkin';
 import { BmCanvasRenderer } from './BmCanvasRenderer';
 import { useViewportSize } from '../hooks/useViewportSize';
 
@@ -60,6 +61,13 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
 
             if (resourcesToLoad.length > 0) {
                 await assetManager.loadResources(resourcesToLoad);
+            }
+
+            // A d-pad that ships no assets uses the built-in skin.
+            // Load it once here so it is ready before rendering.
+            if ((scheme.displayObjects || []).some(
+                o => o.type === 'dpad' && (o.assets || []).length === 0)) {
+                await loadBuiltInDpadSkin();
             }
 
             let baseW = scheme.width ?? 0;

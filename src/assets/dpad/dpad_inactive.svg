@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 360 360"
+   width="360"
+   height="360"
+   version="1.1"
+   id="svg11"
+   sodipodi:docname="dpad_inactive.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#">
+  <sodipodi:namedview
+     id="namedview11"
+     pagecolor="#ffffff"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.2273864"
+     inkscape:cx="134.687"
+     inkscape:cy="175.99102"
+     inkscape:window-width="2560"
+     inkscape:window-height="1362"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg11" />
+  <defs
+     id="defs4">
+    <linearGradient
+       id="bodyinactive"
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="1">
+      <stop
+         offset="0"
+         stop-color="#2c2c2c"
+         id="stop1" />
+      <stop
+         offset="0.09"
+         stop-color="#2c2c2c"
+         id="stop2" />
+      <stop
+         offset="0.5"
+         stop-color="#1f1f1f"
+         id="stop3" />
+      <stop
+         offset="1"
+         stop-color="#0c0c0c"
+         id="stop4" />
+    </linearGradient>
+    <clipPath
+       id="ccinactive">
+      <path
+         d="M121.5,1.5 L238.5,1.5 L238.5,121.5 L358.5,121.5 L358.5,238.5 L238.5,238.5 L238.5,358.5 L121.5,358.5 L121.5,238.5 L1.5,238.5 L1.5,121.5 L121.5,121.5 Z"
+         id="path4" />
+    </clipPath>
+    <filter
+       id="glowinactive"
+       x="-90%"
+       y="-90%"
+       width="280%"
+       height="280%">
+      <feDropShadow
+         dx="0"
+         dy="0"
+         stdDeviation="5.5"
+         flood-color="#ff7a00"
+         flood-opacity="0.85" />
+    </filter>
+  </defs>
+  <path
+     d="M121.5,1.5 L238.5,1.5 L238.5,121.5 L358.5,121.5 L358.5,238.5 L238.5,238.5 L238.5,358.5 L121.5,358.5 L121.5,238.5 L1.5,238.5 L1.5,121.5 L121.5,121.5 Z"
+     fill="url(#bodyinactive)"
+     id="pad" />
+  <path
+     d="M121.5,1.5 L238.5,1.5 L238.5,121.5 L358.5,121.5 L358.5,238.5 L238.5,238.5 L238.5,358.5 L121.5,358.5 L121.5,238.5 L1.5,238.5 L1.5,121.5 L121.5,121.5 Z"
+     fill="none"
+     stroke="#000000"
+     stroke-opacity="0.4"
+     stroke-width="3"
+     clip-path="url(#ccinactive)"
+     id="pad_shading" />
+  <circle
+     cx="180"
+     cy="180"
+     r="36.5"
+     fill="#151515"
+     id="pad_circle" />
+  <path
+     d="M155.2,160.6 A31.5 31.5 0 0 1 204.8,160.6"
+     stroke="#0e0e0e"
+     stroke-width="8"
+     fill="none"
+     stroke-linecap="round"
+     id="pad_circle_shading_up" />
+  <path
+     d="M204.8,199.4 A31.5 31.5 0 0 1 155.2,199.4"
+     stroke="#0a0a0a"
+     stroke-width="8"
+     fill="none"
+     stroke-linecap="round"
+     id="pad_circle_shading_down" />
+  <polygon
+     points="180,36 155.5,63.5 204.5,63.5"
+     fill="#4f4f4f"
+     id="arrow_up" />
+  <polygon
+     points="180,324 155.5,296.5 204.5,296.5"
+     fill="#4f4f4f"
+     id="arrow_down" />
+  <polygon
+     points="36,180 63.5,155.5 63.5,204.5"
+     fill="#4f4f4f"
+     id="arrow_left" />
+  <polygon
+     points="324,180 296.5,155.5 296.5,204.5"
+     fill="#4f4f4f"
+     id="arrow_right" />
+  <metadata
+     id="metadata11">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by/4.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

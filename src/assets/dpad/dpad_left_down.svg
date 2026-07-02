@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 360 360"
+   width="360"
+   height="360"
+   version="1.1"
+   id="svg15"
+   sodipodi:docname="dpad_left_down.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#">
+  <sodipodi:namedview
+     id="namedview15"
+     pagecolor="#ffffff"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.2273864"
+     inkscape:cx="121.2183"
+     inkscape:cy="195.29616"
+     inkscape:window-width="2560"
+     inkscape:window-height="1362"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg15" />
+  <defs
+     id="defs5">
+    <linearGradient
+       id="bodyleft_down"
+       x1="0"
+       y1="1"
+       x2="1"
+       y2="0">
+      <stop
+         offset="0"
+         stop-color="#111111"
+         id="stop1" />
+      <stop
+         offset="1"
+         stop-color="#272727"
+         id="stop2" />
+    </linearGradient>
+    <linearGradient
+       id="hubleft_down"
+       x1="0.146"
+       y1="0.854"
+       x2="0.854"
+       y2="0.146">
+      <stop
+         offset="0"
+         stop-color="#090909"
+         id="stop3" />
+      <stop
+         offset="0.25"
+         stop-color="#0d0d0d"
+         id="stop4" />
+      <stop
+         offset="1"
+         stop-color="#212121"
+         id="stop5" />
+    </linearGradient>
+    <clipPath
+       id="ccleft_down">
+      <path
+         d="M121.5,1.5 L238.5,1.5 L238.5,121.5 L358.5,121.5 L358.5,238.5 L238.5,238.5 L238.5,358.5 L121.5,358.5 L121.5,238.5 L1.5,238.5 L1.5,121.5 L121.5,121.5 Z"
+         id="path5" />
+    </clipPath>
+    <filter
+       id="glowleft_down"
+       x="0"
+       y="0"
+       width="1"
+       height="1">
+      <feDropShadow
+         dx="0"
+         dy="0"
+         stdDeviation="5.5"
+         flood-color="#ff7a00"
+         flood-opacity="0.85" />
+    </filter>
+  </defs>
+  <path
+     d="M121.5,1.5 L238.5,1.5 L238.5,121.5 L358.5,121.5 L358.5,238.5 L238.5,238.5 L238.5,358.5 L121.5,358.5 L121.5,238.5 L1.5,238.5 L1.5,121.5 L121.5,121.5 Z"
+     fill="url(#bodyleft_down)"
+     id="pad" />
+  <path
+     d="M121.5,1.5 L238.5,1.5 L238.5,121.5 L358.5,121.5 L358.5,238.5 L238.5,238.5 L238.5,358.5 L121.5,358.5 L121.5,238.5 L1.5,238.5 L1.5,121.5 L121.5,121.5 Z"
+     fill="none"
+     stroke="#000000"
+     stroke-opacity="0.4"
+     stroke-width="3"
+     clip-path="url(#ccleft_down)"
+     id="pad_shading" />
+  <line
+     x1="121.5"
+     y1="4.5"
+     x2="238.5"
+     y2="4.5"
+     stroke="#666666"
+     stroke-width="6"
+     clip-path="url(#ccleft_down)"
+     id="pad_up_shading" />
+  <line
+     x1="1.5"
+     y1="124.5"
+     x2="121.5"
+     y2="124.5"
+     stroke="#666666"
+     stroke-width="6"
+     clip-path="url(#ccleft_down)"
+     id="pad_lu_shading" />
+  <line
+     x1="238.5"
+     y1="124.5"
+     x2="358.5"
+     y2="124.5"
+     stroke="#666666"
+     stroke-width="6"
+     clip-path="url(#ccleft_down)"
+     id="pad_ru_shading" />
+  <line
+     x1="355.5"
+     y1="121.5"
+     x2="355.5"
+     y2="238.5"
+     stroke="#666666"
+     stroke-width="6"
+     clip-path="url(#ccleft_down)"
+     id="pad_right_shading" />
+  <line
+     x1="235.5"
+     y1="1.5"
+     x2="235.5"
+     y2="121.5"
+     stroke="#666666"
+     stroke-width="6"
+     clip-path="url(#ccleft_down)"
+     id="pad_ur_shading" />
+  <line
+     x1="235.5"
+     y1="238.5"
+     x2="235.5"
+     y2="358.5"
+     stroke="#666666"
+     stroke-width="6"
+     clip-path="url(#ccleft_down)"
+     id="pad_dr_shading" />
+  <circle
+     cx="180"
+     cy="180"
+     r="36.5"
+     fill="url(#hubleft_down)"
+     id="pad_circle" />
+  <path
+     d="M185.5,211.0 A31.5 31.5 0 0 1 149.0,174.5"
+     stroke="#3f3f3f"
+     stroke-width="8"
+     fill="none"
+     stroke-linecap="round"
+     id="pad_circle_shading" />
+  <polygon
+     points="180,36 155.5,63.5 204.5,63.5"
+     fill="#4f4f4f"
+     id="arrow_up" />
+  <polygon
+     points="180,324 155.5,296.5 204.5,296.5"
+     fill="#ED7500"
+     filter="url(#glowleft_down)"
+     id="arrow_down" />
+  <polygon
+     points="36,180 63.5,155.5 63.5,204.5"
+     fill="#ED7500"
+     filter="url(#glowleft_down)"
+     id="arrow_left" />
+  <polygon
+     points="324,180 296.5,155.5 296.5,204.5"
+     fill="#4f4f4f"
+     id="arrow_right" />
+  <metadata
+     id="metadata15">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by/4.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

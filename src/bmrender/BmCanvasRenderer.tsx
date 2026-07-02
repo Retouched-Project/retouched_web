@@ -3,9 +3,10 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { DisplayObject } from './proto/scheme';
-import { ControlOrientation, SamplingMode, getRotation, getSamplingMode } from './proto/schemeExtensions';
+import { ControlOrientation, SamplingMode, getRotation, getSamplingMode, hasAssets } from './proto/schemeExtensions';
 import { assetManager } from './assetManager';
 import { computeDpadState, computeDpadDrag } from './controls/dpadUtils';
+import { getBuiltInDpadFrame } from './controls/dpadSkin';
 import type { RendererProps } from './rendererProps';
 
 interface DpadLiveState {
@@ -314,7 +315,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
 
         const onMove = (e: PointerEvent) => {
             if (!pointerPositions.current.has(e.pointerId)) return;
-            
+
             const rect = canvas.getBoundingClientRect();
             if (e.clientX < rect.left || e.clientX > rect.right ||
                 e.clientY < rect.top || e.clientY > rect.bottom) {
@@ -379,7 +380,9 @@ function drawDpad(
     state: DpadLiveState | undefined,
 ) {
     const suffixes = ['left_up', 'up', 'right_up', 'left', 'inactive', 'right', 'left_down', 'down', 'right_down'];
-    const bmp = resolveBitmap(obj, suffixes[state?.stateIndex ?? 4] || 'inactive');
+    const suffix = suffixes[state?.stateIndex ?? 4] || 'inactive';
+    // A d-pad that ships no assets of its own falls back to the built-in skin.
+    const bmp = hasAssets(obj) ? resolveBitmap(obj, suffix) : getBuiltInDpadFrame(suffix);
     if (bmp) {
         ctx.imageSmoothingEnabled = getSamplingMode(obj) === SamplingMode.Bilinear;
         ctx.drawImage(bmp, x + (state?.dragOffset?.x ?? 0), y + (state?.dragOffset?.y ?? 0), w, h);
