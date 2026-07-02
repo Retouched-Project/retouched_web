@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 63 57"
+   width="63"
+   height="57"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="nav_btn_back.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#">
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="14.067703"
+     inkscape:cx="26.798973"
+     inkscape:cy="29.997789"
+     inkscape:window-width="2560"
+     inkscape:window-height="1362"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <defs
+     id="defs3">
+    <linearGradient
+       id="backBody"
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="1">
+      <stop
+         offset="0"
+         stop-color="#ff7000"
+         id="stop1" />
+      <stop
+         offset="0.2"
+         stop-color="#fc6c00"
+         id="stop2" />
+      <stop
+         offset="1"
+         stop-color="#dd5400"
+         id="stop3" />
+    </linearGradient>
+  </defs>
+  <path
+     d="M0,0 L63,0 L63,41 Q63,57 47,57 L0,57 Z"
+     fill="url(#backBody)"
+     id="button_rect" />
+  <path
+     d="M17.5,25 L30,17.5 L29.2,21.8 C36.5,22.8 40.5,27.5 41.8,34.8 C37.8,29.8 33,27.6 28.3,27.8 L28,32.5 Z"
+     fill="#420700"
+     id="arrow" />
+  <metadata
+     id="metadata4">
+    <rdf:RDF>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by/4.0/" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

@@ -326,6 +326,16 @@ export class GameClient {
         }
     }
 
+    // Reports one NAVIGATION-mode button press: the command name (back, activate,
+    // up, down, left, right).
+    sendNavigation(nav: string) {
+        const activeGame = this.session.getActiveGame();
+        if (activeGame) {
+            const outgoings = this.engine.emit({ type: 'SendNavigation', target: activeGame.device.deviceId, nav });
+            this.protocol.sendOutgoings(outgoings, activeGame);
+        }
+    }
+
     sendPause() { this.session.setPaused(true, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
     sendResume() { this.session.setPaused(false, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
 

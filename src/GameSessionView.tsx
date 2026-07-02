@@ -7,6 +7,7 @@ import type { GameClientState } from './gameClient';
 import type { SensorStatus } from './core/sensorProcessor';
 import type { ControlMode } from './types';
 import { KeyboardOverlay } from './KeyboardOverlay';
+import { NavOverlay } from './NavOverlay';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { getOptions, getRotation, ControlOrientation } from './bmrender/proto/schemeExtensions';
 import { BmRenderView } from './bmrender/BmRenderView';
@@ -145,7 +146,12 @@ export const GameSessionView: React.FC<Props> = ({
     }, [client]);
 
     const isLandscape = schemeLandscape && !whitelisted; // effective orientation
-    const sliderRightOffset = isLandscape ? 60 : 12;
+    const navMode = controlMode === 'Navigation';
+    // NAVIGATION mode is portrait, so the overlays and pause slider ignore the
+    // scheme's landscape rotation while it is active.
+    const overlayRotate = forceRotate && !navMode;
+    const sliderLandscape = isLandscape && !navMode;
+    const sliderRightOffset = sliderLandscape ? 60 : 12;
 
     useEffect(() => {
         isLandscapeRef.current = isLandscape;
@@ -216,8 +222,13 @@ export const GameSessionView: React.FC<Props> = ({
                 />
             )}
 
+            {/* NAVIGATION control mode */}
+            {navMode && (
+                <NavOverlay onNav={(cmd) => client.sendNavigation(cmd)} />
+            )}
+
             {/* Rotation wrapper for overlays */}
-            <div style={forceRotate ? {
+            <div style={overlayRotate ? {
                 position: 'absolute',
                 top: '50%',
                 left: '50%',
@@ -233,12 +244,12 @@ export const GameSessionView: React.FC<Props> = ({
                 {/* Unlock slider */}
                 <div style={{
                     position: 'absolute',
-                    top: isLandscape ? 12 : 56,
+                    top: sliderLandscape ? 12 : 56,
                     right: sliderRightOffset,
                     zIndex: 100,
                     pointerEvents: 'auto',
                 }}>
-                    <UnlockSlider ref={sliderRef} onUnlocked={handleUnlocked} rotated={forceRotate} />
+                    <UnlockSlider ref={sliderRef} onUnlocked={handleUnlocked} rotated={overlayRotate} />
                 </div>
 
                 {/* Status banners */}
@@ -272,7 +283,7 @@ export const GameSessionView: React.FC<Props> = ({
                             width: '90%',
                             overflow: 'hidden',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                            transform: forceRotate ? 'rotate(90deg)' : undefined,
+                            transform: overlayRotate ? 'rotate(90deg)' : undefined,
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
