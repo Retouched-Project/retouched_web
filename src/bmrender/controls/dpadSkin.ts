@@ -11,18 +11,6 @@ import dpadLeftDown from '../../assets/dpad/dpad_left_down.svg?url';
 import dpadDown from '../../assets/dpad/dpad_down.svg?url';
 import dpadRightDown from '../../assets/dpad/dpad_right_down.svg?url';
 
-export interface DpadSkinFrames {
-    up?: ImageBitmap;
-    down?: ImageBitmap;
-    left?: ImageBitmap;
-    right?: ImageBitmap;
-    center?: ImageBitmap;
-    ul?: ImageBitmap;
-    ur?: ImageBitmap;
-    dl?: ImageBitmap;
-    dr?: ImageBitmap;
-}
-
 const BUILT_IN_FRAME_URLS: Record<string, string> = {
     left_up: dpadLeftUp,
     up: dpadUp,
