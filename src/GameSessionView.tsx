@@ -8,6 +8,7 @@ import type { SensorStatus } from './core/sensorProcessor';
 import type { ControlMode } from './types';
 import { KeyboardOverlay } from './KeyboardOverlay';
 import { NavOverlay } from './NavOverlay';
+import { WaitOverlay } from './WaitOverlay';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { getOptions, getRotation, ControlOrientation } from './bmrender/proto/schemeExtensions';
 import { BmRenderView } from './bmrender/BmRenderView';
@@ -147,10 +148,12 @@ export const GameSessionView: React.FC<Props> = ({
 
     const isLandscape = schemeLandscape && !whitelisted; // effective orientation
     const navMode = controlMode === 'Navigation';
-    // NAVIGATION mode is portrait, so the overlays and pause slider ignore the
-    // scheme's landscape rotation while it is active.
-    const overlayRotate = forceRotate && !navMode;
-    const sliderLandscape = isLandscape && !navMode;
+    const waitMode = controlMode === 'Wait';
+    // NAVIGATION and WAIT modes are portrait, so the overlays and pause slider
+    // ignore the scheme's landscape rotation while either is active.
+    const portraitMode = navMode || waitMode;
+    const overlayRotate = forceRotate && !portraitMode;
+    const sliderLandscape = isLandscape && !portraitMode;
     const sliderRightOffset = sliderLandscape ? 60 : 12;
 
     useEffect(() => {
@@ -226,6 +229,9 @@ export const GameSessionView: React.FC<Props> = ({
             {navMode && (
                 <NavOverlay onNav={(cmd) => client.sendNavigation(cmd)} />
             )}
+
+            {/* WAIT control mode */}
+            {waitMode && <WaitOverlay />}
 
             {/* Rotation wrapper for overlays */}
             <div style={overlayRotate ? {
