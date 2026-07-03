@@ -1,9 +1,29 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
+import path from 'path'
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import { VitePWA } from 'vite-plugin-pwa'
+
+const pkg = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
+
+function emitVersionJson(): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'emit-version-json',
+    apply: 'build',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      const version = (process.env.VITE_APP_VERSION || pkg.version).replace(/^v(?=\d)/, '');
+      const payload = { version, buildTime: new Date().toISOString() };
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(path.join(outDir, 'version.json'), JSON.stringify(payload, null, 2));
+    },
+  };
+}
 
 const keyPath = process.env.VITE_CERT_KEY;
 const certPath = process.env.VITE_CERT_PEM;
@@ -22,6 +42,7 @@ export default defineConfig({
     react(),
     wasm(),
     topLevelAwait(),
+    emitVersionJson(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['retouched_logo.svg', 'apple-touch-icon.png'],

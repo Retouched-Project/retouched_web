@@ -37,6 +37,8 @@ jobs:
         working-directory: ../bronze_monkey
 
       - name: Build Web App
+        env:
+          VITE_APP_VERSION: ${{ github.ref_name }}
         run: |
           npm ci
           npm run build
@@ -44,9 +46,11 @@ jobs:
       - name: Package Dist
         run: zip -r retouched_web_release.zip dist/
 
-      - name: Upload Release Asset
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
-          files: retouched_web_release.zip
+          files: |
+            retouched_web_release.zip
+            dist/version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
