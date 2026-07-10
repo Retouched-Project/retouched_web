@@ -252,6 +252,14 @@ export class GameClient {
             case 'Vibrate':
                 VibrationService.vibrate();
                 break;
+            case 'ConnectionFailed': {
+                const activeGame = this.session.getActiveGame();
+                console.warn(`[GameClient] Game reported connection failed: ${ev.deviceId}`);
+                if (ev.deviceId && ev.deviceId === activeGame?.device.deviceId) {
+                    this.disconnectGame();
+                }
+                break;
+            }
             default:
                 break;
         }
