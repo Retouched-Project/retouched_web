@@ -45,6 +45,15 @@ export class BmEngine {
         }
     }
 
+    setRoleEnabled(roleCode: number, enabled: boolean) {
+        try {
+            this.engine.set_role_enabled(roleCode, enabled);
+        } catch (e) {
+            console.error("[BmEngine] set_role_enabled WASM panic:", e);
+            throw e;
+        }
+    }
+
     getHandshakeBytes(): Uint8Array {
         if (!this.wasmEngine) throw new Error("Engine not initialized");
         return make_handshake_bytes();
