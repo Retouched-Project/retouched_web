@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-export class DeviceInfo {
-    private static readonly CHARS = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+import { generate_device_id } from '../wasm/bronze_monkey';
 
+export class DeviceInfo {
     private static deviceId: string | null = null;
     private static appId: string = 'c3eeomasdq211sxtlh89wjl2';
 
@@ -14,7 +14,7 @@ export class DeviceInfo {
 
     static getDeviceId(): string {
         if (!this.deviceId) {
-            this.deviceId = this.generateRandomId(16);
+            this.deviceId = generate_device_id();
         }
         return this.deviceId;
     }
@@ -38,13 +38,5 @@ export class DeviceInfo {
         if (/android/i.test(ua)) return 4;
         if (/iphone|ipad|ipod/i.test(ua)) return 2;
         return 0;
-    }
-
-    private static generateRandomId(len: number): string {
-        let result = '';
-        for (let i = 0; i < len; i++) {
-            result += this.CHARS.charAt(Math.floor(Math.random() * this.CHARS.length));
-        }
-        return result;
     }
 }
