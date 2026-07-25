@@ -44,7 +44,7 @@ export class RegistryClient {
 
         try {
             this.engine.initLocalDevice(deviceId, deviceName, typeCode, host, 0, port);
-            this.engine.setRoleEnabled(2, true); // 2 = controller role
+            this.engine.configureRoles(false, 2); // 2 = controller mode
 
             this.engine.registerDevice('server', 'Registry', 7, host, 0, 8088);
 

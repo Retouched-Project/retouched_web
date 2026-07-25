@@ -45,11 +45,11 @@ export class BmEngine {
         }
     }
 
-    setRoleEnabled(roleCode: number, enabled: boolean) {
+    configureRoles(serverEnabled: boolean, endpointMode: number) {
         try {
-            this.engine.set_role_enabled(roleCode, enabled);
+            this.engine.configure_roles(serverEnabled, endpointMode);
         } catch (e) {
-            console.error("[BmEngine] set_role_enabled WASM panic:", e);
+            console.error("[BmEngine] configure_roles WASM panic:", e);
             throw e;
         }
     }
