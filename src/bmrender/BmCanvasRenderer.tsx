@@ -278,9 +278,10 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
                 const ds = dpadStatesRef.current.get(dpadId);
                 const dx = ds?.dragOffset?.x ?? 0;
                 const dy = ds?.dragOffset?.y ?? 0;
-                const state = computeDpadState(activePos.x, activePos.y, cx + dx, cy + dy, target.visualWidth, target.obj.deadzone ?? 0.25, target.obj.radial ?? true);
+                const aspectYScale = baseH > 0 ? baseW / baseH : 1.0;
+                const state = computeDpadState(activePos.x, activePos.y, cx + dx, cy + dy, target.visualWidth, target.obj.deadzone ?? 0.25, target.obj.radial ?? true, aspectYScale);
                 const drag = floatingDpadRef.current
-                    ? computeDpadDrag(activePos.x, activePos.y, cx, cy, dx, dy, target.visualWidth, target.hitRect, 1.0)
+                    ? computeDpadDrag(activePos.x, activePos.y, cx, cy, dx, dy, target.visualWidth, target.hitRect, aspectYScale)
                     : { x: 0, y: 0 };
 
                 dpadStatesRef.current.set(dpadId, { stateIndex: state, dragOffset: drag });
