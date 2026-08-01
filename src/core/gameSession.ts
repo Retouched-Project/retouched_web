@@ -109,6 +109,20 @@ export class GameSession {
         sendAction(actions);
     }
 
+    // The port a game listens on for UDP is only known once it acknowledges the
+    // connection. What the registry advertised is usually 0 for those games.
+    adoptUdpEndpoint(udpPort: number) {
+        const game = this.activeGame;
+        if (!game || game.deviceAddress.unreliablePort === udpPort) return;
+        const updated: BmRegistryInfo = {
+            ...game,
+            deviceAddress: { ...game.deviceAddress, unreliablePort: udpPort },
+        };
+        this.activeGame = updated;
+        this.onStateUpdate({ activeGame: updated });
+        log.info(`Game UDP port is ${udpPort}`);
+    }
+
     getActiveGame() { return this.activeGame; }
     getIsPaused() { return this.isPaused; }
 }

@@ -56,7 +56,7 @@ export interface BmControlConfig {
 export type BmEvent =
     | { type: 'Handshake'; current: number; minimum: number }
     | { type: 'PeerSeen'; record: BmDeviceRecord }
-    | { type: 'PeerConnected'; record: BmDeviceRecord }
+    | { type: 'PeerConnected'; record: BmDeviceRecord; udpPort: number }
     | { type: 'ConnectionFailed'; deviceId: string }
     | { type: 'RegistrationResult'; success: boolean }
     | { type: 'SlotAssigned'; info: BmRegistryInfo }

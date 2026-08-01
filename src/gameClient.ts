@@ -255,6 +255,16 @@ export class GameClient {
             case 'Vibrate':
                 VibrationService.vibrate();
                 break;
+            case 'PeerConnected': {
+                const activeGame = this.session.getActiveGame();
+                if (!activeGame || ev.record.core.deviceId !== activeGame.device.deviceId) break;
+                this.session.adoptUdpEndpoint(ev.udpPort);
+                if (ev.udpPort !== 0) {
+                    const msg = JSON.stringify({ type: 'set_game_udp_port', port: ev.udpPort });
+                    this.transport.send('game', new TextEncoder().encode(msg));
+                }
+                break;
+            }
             case 'ConnectionFailed': {
                 const activeGame = this.session.getActiveGame();
                 log.warn(`Game reported connection failed: ${ev.deviceId}`);
@@ -272,10 +282,6 @@ export class GameClient {
         this.protocol.resetFramer('game');
         this.gameHandshakeReceived = false;
         this.session.joinGame(game, this.selfInfo);
-        if (game.deviceAddress.unreliablePort !== 0) {
-            const msg = JSON.stringify({ type: 'set_game_udp_port', port: game.deviceAddress.unreliablePort });
-            this.transport.send('game', new TextEncoder().encode(msg));
-        }
     }
 
     async setCapabilitiesOverride(mask: number | null) {
