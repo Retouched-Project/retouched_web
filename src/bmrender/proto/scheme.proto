@@ -15,6 +15,7 @@ message ControlScheme {
   repeated AppResource resources = 7;
   repeated DisplayObject display_objects = 8;
   repeated ContextMenuOption options = 9;
+  repeated int32 changed_resources = 10;
 }
 
 message AppResource {
