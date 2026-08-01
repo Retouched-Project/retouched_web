@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
+import { createLogger } from '../../utils/logger';
+
+const log = createLogger('MessageFramer');
+
 export class MessageFramer {
     private buffer = new Uint8Array(0);
     private handshakeDone = false;
@@ -28,7 +32,7 @@ export class MessageFramer {
             const bodyLen = dv.getUint32(0, true);
 
             if (bodyLen > 100 * 1024 * 1024) {
-                console.error('[MessageFramer] Illegal frame length detected:', bodyLen);
+                log.error('Illegal frame length detected:', bodyLen);
                 this.reset();
                 break;
             }

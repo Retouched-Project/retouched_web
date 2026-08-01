@@ -3,6 +3,9 @@
 
 import init, { BmEngineWasm, init_panic_hook, make_handshake_bytes, parse_control_scheme_xml } from './wasm/bronze_monkey';
 import type { BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
+import { configureLibLogging, createLogger } from './utils/logger';
+
+const log = createLogger('BmEngine');
 
 export class BmEngine {
     private wasmEngine: BmEngineWasm | null = null;
@@ -17,15 +20,18 @@ export class BmEngine {
     }
 
     private async _doInit() {
-        console.log('[BmEngine] Initializing WASM engine singleton...');
+        log.info('Initializing WASM engine singleton...');
         try {
             await init();
+            // Before anything else touches the engine, so its own startup
+            // records land in the ring rather than being dropped.
+            configureLibLogging();
             init_panic_hook();
             this.wasmEngine = new BmEngineWasm();
             this.initialized = true;
-            console.log('[BmEngine] WASM engine initialized successfully');
+            log.info('WASM engine initialized successfully');
         } catch (err) {
-            console.error('[BmEngine] WASM engine initialization failed:', err);
+            log.error('WASM engine initialization failed:', err);
             this.initPromise = null;
             throw err;
         }
@@ -40,7 +46,7 @@ export class BmEngine {
         try {
             this.engine.init_local_device(id, name, typeCode, address, unreliablePort, reliablePort);
         } catch (e) {
-            console.error("[BmEngine] init_local_device WASM panic:", e);
+            log.error("init_local_device WASM panic:", e);
             throw e;
         }
     }
@@ -49,7 +55,7 @@ export class BmEngine {
         try {
             this.engine.configure_roles(serverEnabled, endpointMode);
         } catch (e) {
-            console.error("[BmEngine] configure_roles WASM panic:", e);
+            log.error("configure_roles WASM panic:", e);
             throw e;
         }
     }
@@ -63,7 +69,7 @@ export class BmEngine {
         try {
             this.engine.register_device(id, name, typeCode, address, unreliablePort, reliablePort);
         } catch (e) {
-            console.error("[BmEngine] register_device WASM panic:", e);
+            log.error("register_device WASM panic:", e);
             throw e;
         }
     }

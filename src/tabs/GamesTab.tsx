@@ -9,6 +9,9 @@ import hostUrl from '../assets/host.svg?url';
 import checkmarkUrl from '../assets/checkmark.svg?url';
 import crossUrl from '../assets/cross.svg?url';
 import logoUrl from '../assets/retouched_logo.svg';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('GamesTab');
 
 interface GamesTabProps {
     connected: boolean;
@@ -76,7 +79,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
     sensorPermissionGranted,
     onRequestSensorPermission,
 }) => {
-    console.log("Current Game Port:", gamePort);
+    log.debug("Current game port:", gamePort);
 
     const hasGames = gameInfos.length > 0;
 

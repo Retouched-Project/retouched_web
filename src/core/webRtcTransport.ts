@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('WebRtcTransport');
+
 export class WebRtcTransport {
     private pc: RTCPeerConnection | null = null;
     private channels = new Map<string, RTCDataChannel>();
@@ -20,7 +24,7 @@ export class WebRtcTransport {
         this.closed = false;
         if (this.pc) this.close();
 
-        console.log('[WebRtcTransport] Creating RTCPeerConnection...');
+        log.info('Creating RTCPeerConnection...');
         this.pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
@@ -36,7 +40,7 @@ export class WebRtcTransport {
 
         if (!this.pc || this.closed) return;
 
-        console.log('[WebRtcTransport] Sending offer to signaling server...');
+        log.info('Sending offer to signaling server...');
         try {
             const response = await fetch(this.signalingUrl, {
                 method: 'POST',
@@ -58,7 +62,7 @@ export class WebRtcTransport {
             const answer = await response.json();
 
             if (this.pc && !this.closed) {
-                console.log('[WebRtcTransport] Received answer, setting remote description');
+                log.info('Received answer, setting remote description');
                 await this.pc.setRemoteDescription(answer);
             }
         } catch (err) {
@@ -72,13 +76,13 @@ export class WebRtcTransport {
         if (chan?.readyState === 'open') {
             chan.send(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer);
         } else {
-            console.warn(`[WebRtcTransport] Channel '${label}' is not open (state: ${chan?.readyState})`);
+            log.warn(`Channel '${label}' is not open (state: ${chan?.readyState})`);
         }
     }
 
     close(): void {
         this.closed = true;
-        console.log('[WebRtcTransport] Closing connection...');
+        log.info('Closing connection...');
         this.channels.forEach(chan => {
             chan.onmessage = null;
             chan.onopen = null;
@@ -100,12 +104,12 @@ export class WebRtcTransport {
         chan.binaryType = 'arraybuffer';
 
         chan.onopen = () => {
-            console.log(`[WebRtcTransport] Channel '${label}' open`);
+            log.info(`Channel '${label}' open`);
             this.onOpen?.(label);
         };
 
         chan.onclose = () => {
-            console.log(`[WebRtcTransport] Channel '${label}' closed`);
+            log.info(`Channel '${label}' closed`);
             this.onClose?.(label);
         };
 

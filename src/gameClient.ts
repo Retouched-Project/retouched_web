@@ -15,6 +15,9 @@ import { TouchProcessor } from './core/touchProcessor';
 import { SensorProcessor, type SensorStatus } from './core/sensorProcessor';
 import { ProtocolCoordinator } from './core/engine/protocolCoordinator';
 import { SchemeService } from './core/engine/schemeService';
+import { createLogger } from './utils/logger';
+
+const log = createLogger('GameClient');
 
 export interface GameClientState {
     connected: boolean;
@@ -126,13 +129,13 @@ export class GameClient {
     private setupTransportListeners() {
         this.transport.onMessage = (label, data) => this.handleTransportMessage(label, data);
         this.transport.onOpen = (label) => {
-            console.log(`[GameClient] ${label} channel open`);
+            log.info(`${label} channel open`);
             if (label === 'registry') {
                 this.updateState({ connected: true });
             }
         };
         this.transport.onError = (err) => {
-            console.error('[GameClient] Transport error:', err);
+            log.error('Transport error:', err);
         };
     }
 
@@ -154,7 +157,7 @@ export class GameClient {
         const frames = this.protocol.handleIncomingData(label, data);
         for (const frame of frames) {
             if (frame.length === 12) {
-                console.log(`[GameClient] Received ${label} handshake`);
+                log.info(`Received ${label} handshake`);
                 if (label === 'game' && !this.gameHandshakeReceived) {
                     this.gameHandshakeReceived = true;
                     const handshake = this.engine.getHandshakeBytes();
@@ -199,11 +202,11 @@ export class GameClient {
                 const msg = JSON.parse(text);
                 if (msg.type === 'game_closed') {
                     if (this.isHandlingPolicy) {
-                        console.log('[GameClient] Ignoring policy socket drop');
+                        log.info('Ignoring policy socket drop');
                         this.isHandlingPolicy = false;
                         return true;
                     }
-                    console.log('[GameClient] Game closed by server (TCP connection dropped)');
+                    log.info('Game closed by server (TCP connection dropped)');
                     this.disconnectGame();
                     return true;
                 }
@@ -254,7 +257,7 @@ export class GameClient {
                 break;
             case 'ConnectionFailed': {
                 const activeGame = this.session.getActiveGame();
-                console.warn(`[GameClient] Game reported connection failed: ${ev.deviceId}`);
+                log.warn(`Game reported connection failed: ${ev.deviceId}`);
                 if (ev.deviceId && ev.deviceId === activeGame?.device.deviceId) {
                     this.disconnectGame();
                 }

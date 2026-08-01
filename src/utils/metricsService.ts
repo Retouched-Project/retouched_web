@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
+import { createLogger } from './logger';
+
+const log = createLogger('MetricsService');
+
 export class MetricsService {
     public static readonly SESSION_START = 1685287796;
     public static readonly SESSION_END = 1685284196;
@@ -17,7 +21,7 @@ export class MetricsService {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body,
         }).catch((err) => {
-            console.warn('[MetricsService] Failed to send metrics:', err);
+            log.warn('Failed to send metrics:', err);
         });
     }
 }

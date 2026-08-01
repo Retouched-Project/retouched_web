@@ -12,6 +12,7 @@ interface OptionsTabProps {
     setCapabilitiesOverride: (v: number | null) => void;
     preserveDpadDragEnabled: boolean;
     setPreserveDpadDragEnabled: (v: boolean) => void;
+    onShowLogs: () => void;
 }
 
 export const OptionsTab: React.FC<OptionsTabProps> = ({
@@ -23,6 +24,7 @@ export const OptionsTab: React.FC<OptionsTabProps> = ({
     setCapabilitiesOverride,
     preserveDpadDragEnabled,
     setPreserveDpadDragEnabled,
+    onShowLogs,
 }) => {
     const [showCapDialog, setShowCapDialog] = useState(false);
 
@@ -65,6 +67,14 @@ export const OptionsTab: React.FC<OptionsTabProps> = ({
                         style={styles.clearButton}
                     >✕</button>
                 )}
+            </div>
+
+            <div style={styles.item} onClick={onShowLogs}>
+                <div style={styles.textContainer}>
+                    <div style={styles.title}>Logs</div>
+                    <div style={styles.subtitle}>View app and engine logs</div>
+                </div>
+                <div style={styles.chevron}>›</div>
             </div>
 
             {showCapDialog && (
@@ -194,6 +204,12 @@ const styles = {
         top: 2,
         left: 2,
         transition: 'transform 0.2s',
+    },
+    chevron: {
+        color: '#888',
+        fontSize: 22,
+        lineHeight: 1,
+        paddingRight: 4,
     },
     clearButton: {
         background: 'none',

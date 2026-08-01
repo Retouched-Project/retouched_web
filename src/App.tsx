@@ -12,6 +12,10 @@ import { GameSessionView } from './GameSessionView';
 import { GamesTab } from './tabs/GamesTab';
 import { OptionsTab } from './tabs/OptionsTab';
 import { AboutTab } from './tabs/AboutTab';
+import { LogsView } from './LogsView';
+import { createLogger } from './utils/logger';
+
+const log = createLogger('App');
 
 export interface BmAppSettings {
   floatingDpadEnabled: boolean;
@@ -25,6 +29,7 @@ type TabName = typeof TTabs[number];
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabName>('games');
+  const [showLogs, setShowLogs] = useState(false);
 
   const [connected, setConnected] = useState(false);
   const [gameInfos, setGameInfos] = useState<BmRegistryInfo[]>([]);
@@ -97,7 +102,7 @@ function App() {
     try {
       await client.connect();
     } catch (e) {
-      console.error("Connection failed", e);
+      log.error("Connection failed", e);
       setError("Connection failed. Is the bridge running?");
       setConnecting(false);
     }
@@ -110,13 +115,13 @@ function App() {
     const init = async () => {
       try {
         await bmEngine.init();
-        console.log("WASM Initialized");
+        log.info("WASM initialized");
 
         if (cancelled) return;
         doConnect();
 
       } catch (e) {
-        console.error("Failed to init WASM", e);
+        log.error("Failed to init WASM", e);
         if (!cancelled) setError("Failed to initialize WASM");
       }
     };
@@ -164,7 +169,7 @@ function App() {
       await gameClientRef.current.joinGame(game);
       setActiveGame(game);
     } catch (e) {
-      console.error("Failed to join game", e);
+      log.error("Failed to join game", e);
       alert("Failed to join game: " + e);
     }
   };
@@ -231,6 +236,10 @@ function App() {
     touchStartY.current = null;
     isHorizontalDrag.current = null;
   };
+
+  if (showLogs) {
+    return <LogsView onClose={() => setShowLogs(false)} />;
+  }
 
   if (activeGame && gameClient) {
     return (
@@ -332,6 +341,7 @@ function App() {
               setCapabilitiesOverride={setCapabilitiesOverride}
               preserveDpadDragEnabled={preserveDpadDragEnabled}
               setPreserveDpadDragEnabled={setPreserveDpadDragEnabled}
+              onShowLogs={() => setShowLogs(true)}
             />
           </div>
           <div className="tab-pane">

@@ -3,6 +3,9 @@
 
 import type { BmEngine } from '../bmEngine';
 import type { BmOutgoing } from '../types';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('SensorProcessor');
 
 export type SensorStatus = 'idle' | 'active' | 'permission_denied' | 'unavailable';
 
@@ -101,7 +104,7 @@ export class SensorProcessor {
                 return;
             } catch (e) {
                 if (!this.accelSensor && !this.accelDeviceMotionHandler) {
-                    console.warn('[SensorProcessor] Accelerometer API failed, falling back to DeviceMotion', e);
+                    log.warn('Accelerometer API failed, falling back to DeviceMotion', e);
                 }
             }
         }
@@ -179,7 +182,7 @@ export class SensorProcessor {
                 return;
             } catch (e) {
                 if (!this.gyroSensor && !this.gyroDeviceMotionHandler) {
-                    console.warn('[SensorProcessor] Gyroscope API failed, falling back to DeviceMotion', e);
+                    log.warn('Gyroscope API failed, falling back to DeviceMotion', e);
                 }
             }
         }
@@ -254,7 +257,7 @@ export class SensorProcessor {
                 return;
             } catch (e) {
                 if (!this.orientationSensor && !this.orientationTimer) {
-                    console.warn('[SensorProcessor] AbsoluteOrientationSensor API failed, falling back to DeviceOrientationEvent', e);
+                    log.warn('AbsoluteOrientationSensor API failed, falling back to DeviceOrientationEvent', e);
                 }
             }
         }

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('AssetManager');
+
 export class AssetManager {
     private bitmapCache: Map<number, ImageBitmap> = new Map();
     private blobCache: Map<number, string> = new Map();
@@ -24,9 +28,9 @@ export class AssetManager {
                 const url = URL.createObjectURL(blob);
                 const img = await createImageBitmap(blob);
                 loaded.push({ id: res.id, bitmap: img, url });
-                console.log(`[AssetManager] Loaded resource ${res.id} (${res.bitmap.length} bytes)`);
+                log.debug(`Loaded resource ${res.id} (${res.bitmap.length} bytes)`);
             } catch (e) {
-                console.error(`[AssetManager] Failed to load resource ${res.id}`, e);
+                log.error(`Failed to load resource ${res.id}`, e);
             }
         }));
 

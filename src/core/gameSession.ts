@@ -5,6 +5,9 @@ import type { BmEngine } from '../bmEngine';
 import { DeviceInfo } from './deviceInfo';
 import { MetricsService } from '../utils/metricsService';
 import type { BmOutgoing, BmRegistryInfo } from '../types';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('GameSession');
 
 export class GameSession {
     private engine: BmEngine;
@@ -24,11 +27,11 @@ export class GameSession {
 
     joinGame(game: BmRegistryInfo, selfInfo: BmRegistryInfo | null) {
         if (!selfInfo) {
-            console.error('[GameSession] Cannot join game: selfInfo not set');
+            log.error('Cannot join game: selfInfo not set');
             return;
         }
 
-        console.log('[GameSession] Joining game:', game.device.deviceName);
+        log.info('Joining game:', game.device.deviceName);
         this.activeGame = game;
         this.isPaused = false;
 
@@ -58,9 +61,9 @@ export class GameSession {
             try {
                 const msg = JSON.stringify({ type: 'disconnect_game' });
                 sendDisconnectSignal(new TextEncoder().encode(msg));
-                console.log('[GameSession] Sent disconnect_game signal');
+                log.info('Sent disconnect_game signal');
             } catch (e) {
-                console.warn('[GameSession] Failed to send disconnect_game signal:', e);
+                log.warn('Failed to send disconnect_game signal:', e);
             }
         }
 
@@ -79,13 +82,13 @@ export class GameSession {
         const deviceId = this.identity.getDeviceId();
 
         const caps = await getCapabilities();
-        console.log(`[GameSession] Sending setCapabilities to game (mask=${caps})...`);
+        log.info(`Sending setCapabilities to game (mask=${caps})...`);
         const capActions = this.engine.makeSetCapabilities(targetId, caps);
         sendAction(capActions);
 
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
-        console.log(`[GameSession] Sending requestXml (${screenWidth}x${screenHeight}) to game...`);
+        log.info(`Sending requestXml (${screenWidth}x${screenHeight}) to game...`);
         const xmlActions = this.engine.makeRequestXml(targetId, screenWidth, screenHeight, deviceId);
         sendAction(xmlActions);
     }

@@ -4,6 +4,9 @@
 import type { BmEngine } from '../bmEngine';
 import { DeviceInfo } from './deviceInfo';
 import type { BmRegistryInfo } from '../types';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('RegistryClient');
 
 export class RegistryClient {
     private engine: BmEngine;
@@ -24,7 +27,7 @@ export class RegistryClient {
                 if (text.includes('"port_assignment"')) {
                     const msg = JSON.parse(text);
                     if (msg.type === 'port_assignment') {
-                        console.log('[RegistryClient] Received Port Assignment:', msg);
+                        log.info('Received Port Assignment:', msg);
                         this.handlePortAssignment(msg.port, msg.host);
                         return true;
                     }
@@ -40,7 +43,7 @@ export class RegistryClient {
         const deviceName = DeviceInfo.getDeviceName();
         const typeCode = DeviceInfo.getDeviceTypeCode();
 
-        console.log(`[RegistryClient] Initializing local device: ${deviceId} on ${host}:${port}`);
+        log.info(`Initializing local device: ${deviceId} on ${host}:${port}`);
 
         try {
             this.engine.initLocalDevice(deviceId, deviceName, typeCode, host, 0, port);
@@ -53,7 +56,7 @@ export class RegistryClient {
 
             await this.registerWithRegistry(deviceId, host, port, deviceName, typeCode);
         } catch (e) {
-            console.error('[RegistryClient] Local device initialization failed:', e);
+            log.error('Local device initialization failed:', e);
         }
     }
 
@@ -78,14 +81,14 @@ export class RegistryClient {
             deviceAddress: selfAddress,
         };
 
-        console.log('[RegistryClient] Sending registration request...');
+        log.info('Sending registration request...');
         const actions = this.engine.makeRegistryRegister('server', selfInfo, 'retouchedweb');
         this.onStateUpdate({ selfInfo });
 
         this.onStateUpdate({ actionsToProcess: actions });
 
         await registerPromise;
-        console.log('[RegistryClient] Registration confirmed');
+        log.info('Registration confirmed');
 
         const listActions = this.engine.makeRegistryList('server');
         this.onStateUpdate({ actionsToProcess: listActions });

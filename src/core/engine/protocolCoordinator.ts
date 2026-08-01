@@ -5,6 +5,9 @@ import { MessageFramer } from './messageFramer';
 import type { BmEngine } from '../../bmEngine';
 import { WebRtcTransport } from '../webRtcTransport';
 import type { BmEvent, BmOutgoing, BmRegistryInfo } from '../../types';
+import { createLogger } from '../../utils/logger';
+
+const log = createLogger('ProtocolCoordinator');
 
 export interface ProtocolHandlers {
     onEvent: (event: BmEvent) => void;
@@ -37,7 +40,7 @@ export class ProtocolCoordinator {
                 this.handlers.onEvent(event);
             }
         } catch (e) {
-            console.error("[ProtocolCoordinator] processIncoming failed:", e);
+            log.error("processIncoming failed:", e);
         }
     }
 
