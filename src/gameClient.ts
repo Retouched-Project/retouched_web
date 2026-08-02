@@ -455,7 +455,7 @@ export class GameClient {
     private onSchemeParsed() {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            const actions = this.engine.makeOnControlSchemeParsed(activeGame.device.deviceId, this.identity.getDeviceId());
+            const actions = this.engine.makeOnControlSchemeParsed(activeGame.device.deviceId);
             this.protocol.sendOutgoings(actions, activeGame);
         }
     }

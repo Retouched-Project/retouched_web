@@ -95,80 +95,81 @@ export class BmEngine {
     }
 
     makeRegistryRegister(targetId: string, info: BmRegistryInfo, domain: string): BmOutgoing[] {
-        return this.engine.make_registry_register(
-            targetId,
-            info.slotId,
-            info.appId,
-            info.currentPlayers ?? 0,
-            info.maxPlayers ?? 0,
-            info.device.deviceId,
-            info.device.deviceName,
-            info.device.deviceType,
-            info.deviceAddress.address,
-            info.deviceAddress.unreliablePort,
-            info.deviceAddress.reliablePort,
-            domain
-        ) as BmOutgoing[];
+        return this.emit({ type: 'Register', target: targetId, info, domain, returnMethod: null });
     }
 
     makeRegistryList(targetId: string): BmOutgoing[] {
-        return this.engine.make_registry_list(targetId) as BmOutgoing[];
+        return this.emit({ type: 'RequestHostList', target: targetId, returnMethod: null });
     }
 
     makeDeviceConnectRequested(targetId: string, game: BmRegistryInfo, controller: BmRegistryInfo): BmOutgoing[] {
-        return this.engine.make_device_connect_requested(
-            targetId,
-            game.slotId, game.appId, game.device.deviceId, game.device.deviceName, game.device.deviceType, game.deviceAddress.address, game.deviceAddress.unreliablePort, game.deviceAddress.reliablePort,
-            controller.slotId, controller.appId, controller.device.deviceId, controller.device.deviceName, controller.device.deviceType, controller.deviceAddress.address, controller.deviceAddress.unreliablePort, controller.deviceAddress.reliablePort
-        ) as BmOutgoing[];
+        return this.emit({ type: 'ConnectToHost', target: targetId, host: game, selfInfo: controller });
     }
 
     makeSetControlMode(targetId: string, mode: ControlMode, text?: string): BmOutgoing[] {
-        return this.engine.make_set_control_mode(targetId, mode, text) as BmOutgoing[];
+        return this.emit({ type: 'SetControlMode', target: targetId, mode, text: text ?? null });
     }
 
     makeEnableAccelerometer(targetId: string, enabled: boolean, interval?: number): BmOutgoing[] {
-        return this.engine.make_enable_accelerometer(targetId, enabled, interval) as BmOutgoing[];
+        return this.emit({
+            type: 'ConfigureSensor',
+            target: targetId,
+            sensor: 'Accel',
+            enabled,
+            intervalMs: interval ?? null,
+        });
     }
 
     makeAccel(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
-        return this.engine.make_accel(targetId, x, y, z) as BmOutgoing[];
+        return this.emit({ type: 'SendAccel', target: targetId, x, y, z });
     }
 
     makeGyro(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
-        return this.engine.make_gyro(targetId, x, y, z) as BmOutgoing[];
+        return this.emit({ type: 'SendGyro', target: targetId, x, y, z });
     }
 
     makeOrientation(targetId: string, x: number, y: number, z: number, w: number): BmOutgoing[] {
-        return this.engine.make_orientation(targetId, x, y, z, w) as BmOutgoing[];
+        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w });
     }
 
     makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmOutgoing[] {
-        return this.engine.make_button_invoke(targetId, handler, pressed) as BmOutgoing[];
+        return this.emit({ type: 'SendButton', target: targetId, handler, pressed });
     }
 
     makeDpadUpdate(targetId: string, x: number, y: number): BmOutgoing[] {
-        return this.engine.make_dpad_update(targetId, x, y) as BmOutgoing[];
+        return this.emit({ type: 'SendDPad', target: targetId, x, y });
     }
 
-    makeRequestXml(targetId: string, width: number, height: number, deviceId: string): BmOutgoing[] {
-        return this.engine.make_request_xml(targetId, width, height, deviceId) as BmOutgoing[];
+    // The requesting device id is the engine's own, so it is no longer passed in.
+    makeRequestXml(targetId: string, width: number, height: number): BmOutgoing[] {
+        return this.emit({ type: 'RequestControlScheme', target: targetId, width, height });
     }
 
     makeSetCapabilities(targetId: string, caps: number): BmOutgoing[] {
-        return this.engine.make_set_capabilities(targetId, caps) as BmOutgoing[];
+        return this.emit({
+            type: 'SetCapabilities',
+            target: targetId,
+            gyroscope: (caps & 1) !== 0,
+            orientation: (caps & 2) !== 0,
+        });
     }
 
-    makeOnControlSchemeParsed(targetId: string, deviceId: string): BmOutgoing[] {
-        return this.engine.make_on_control_scheme_parsed(targetId, deviceId) as BmOutgoing[];
+    makeOnControlSchemeParsed(targetId: string): BmOutgoing[] {
+        return this.emit({ type: 'ControlSchemeParsed', target: targetId });
     }
 
     makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>): BmOutgoing[] {
-        return this.engine.make_touch_set(targetId, points) as BmOutgoing[];
+        return this.emit({ type: 'SendTouch', target: targetId, touches: points });
     }
 
     makeSimpleInvoke(targetId: string, method: string, returnVal?: string | null, param?: string | null): BmOutgoing[] {
-        return this.engine.make_simple_invoke(targetId, method, returnVal, param) as BmOutgoing[];
+        return this.emit({
+            type: 'Invoke',
+            target: targetId,
+            method,
+            returnMethod: returnVal ?? null,
+            params: param == null ? [] : [{ String: param }],
+        });
     }
 
     parseControlSchemeXml(xml: string): Uint8Array {

@@ -79,7 +79,6 @@ export class GameSession {
         if (!this.activeGame) return;
 
         const targetId = this.activeGame.device.deviceId;
-        const deviceId = this.identity.getDeviceId();
 
         const caps = await getCapabilities();
         log.info(`Sending setCapabilities to game (mask=${caps})...`);
@@ -89,7 +88,7 @@ export class GameSession {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         log.info(`Sending requestXml (${screenWidth}x${screenHeight}) to game...`);
-        const xmlActions = this.engine.makeRequestXml(targetId, screenWidth, screenHeight, deviceId);
+        const xmlActions = this.engine.makeRequestXml(targetId, screenWidth, screenHeight);
         sendAction(xmlActions);
     }
 
