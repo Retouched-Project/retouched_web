@@ -2,6 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface OptionsTabProps {
     floatingDpadEnabled: boolean;
@@ -96,7 +97,10 @@ const CapabilitiesDialog: React.FC<{
     const [gyro, setGyro] = useState((initial & 1) !== 0);
     const [rotation, setRotation] = useState((initial & 2) !== 0);
 
-    return (
+    // The tabs sit in a translated carousel, and a transformed ancestor becomes
+    // the containing block for fixed positioning, which would pin this over the
+    // first tab instead of the viewport. Rendering into the body avoids that.
+    return createPortal(
         <div style={styles.dialogOverlay} onClick={onCancel}>
             <div style={styles.dialogBox} onClick={(e) => e.stopPropagation()}>
                 <div style={styles.dialogTitle}>Override Sensor Capabilities</div>
@@ -121,7 +125,8 @@ const CapabilitiesDialog: React.FC<{
                     >Save</button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
