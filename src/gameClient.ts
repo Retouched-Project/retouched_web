@@ -281,6 +281,7 @@ export class GameClient {
     async joinGame(game: BmRegistryInfo) {
         this.protocol.resetFramer('game');
         this.gameHandshakeReceived = false;
+        this.updateState({ progress: 0, scheme: null });
         this.session.joinGame(game, this.selfInfo);
     }
 
