@@ -33,6 +33,7 @@ export interface BmOutgoing {
     targetDeviceId: string;
     channel: number;
     reliability: number;
+    prefersDatagram: boolean;
     payload: Uint8Array;
 }
 

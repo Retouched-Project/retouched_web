@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import init, { BmEngineWasm, init_panic_hook, make_handshake_bytes, parse_control_scheme_xml } from './wasm/bronze_monkey';
+import init, { BmEngineWasm, FramerWasm, init_panic_hook, make_handshake_bytes, parse_control_scheme_xml } from './wasm/bronze_monkey';
 import type { BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
@@ -60,6 +60,12 @@ export class BmEngine {
         }
     }
 
+    /// Rejects messages longer than maxLen, or the library ceiling by default.
+    createFramer(maxLen?: number): FramerWasm {
+        if (!this.wasmEngine) throw new Error("Engine not initialized");
+        return new FramerWasm(maxLen);
+    }
+
     getHandshakeBytes(): Uint8Array {
         if (!this.wasmEngine) throw new Error("Engine not initialized");
         return make_handshake_bytes();
@@ -76,10 +82,6 @@ export class BmEngine {
 
     processIncoming(data: Uint8Array): BmProcessOutput {
         return this.engine.process_incoming(data) as BmProcessOutput;
-    }
-
-    processIncomingUdp(data: Uint8Array): BmProcessOutput {
-        return this.engine.process_incoming_udp(data) as BmProcessOutput;
     }
 
     emit(command: unknown): BmOutgoing[] {

@@ -154,9 +154,11 @@ export class GameClient {
             if (this.handleGameJson(data)) return;
         }
 
-        const frames = this.protocol.handleIncomingData(label, data);
-        for (const frame of frames) {
-            if (frame.length === 12) {
+        const messages = this.protocol.handleIncomingData(label, data);
+        for (const message of messages) {
+            // The engine reports the handshake, so no length has to be guessed.
+            const isHandshake = this.protocol.processFrame(message, this.state.activeGame);
+            if (isHandshake) {
                 log.info(`Received ${label} handshake`);
                 if (label === 'game' && !this.gameHandshakeReceived) {
                     this.gameHandshakeReceived = true;
@@ -170,8 +172,6 @@ export class GameClient {
                     this.registryHandshakeReceived = true;
                 }
             }
-
-            this.protocol.processFrame(frame, this.state.activeGame);
         }
     }
 
