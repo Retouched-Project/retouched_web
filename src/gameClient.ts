@@ -93,10 +93,6 @@ export class GameClient {
             this.selfInfo = partial.selfInfo;
             delete partial.selfInfo;
         }
-        if (partial.registryHandshake) {
-            this.transport.send('registry', partial.registryHandshake);
-            delete partial.registryHandshake;
-        }
         if (partial.disconnectedIds) {
             const activeGame = this.session.getActiveGame();
             if (activeGame && partial.disconnectedIds.includes(activeGame.device.deviceId)) {
@@ -156,14 +152,12 @@ export class GameClient {
 
         const messages = this.protocol.handleIncomingData(label, data);
         for (const message of messages) {
-            // The engine reports the handshake, so no length has to be guessed.
-            const isHandshake = this.protocol.processFrame(message, this.state.activeGame);
-            if (isHandshake) {
+            // The handshaker answers the version exchange itself; anything it
+            // passes on belongs to the engine.
+            if (this.protocol.handleHandshake(label, message)) {
                 log.info(`Received ${label} handshake`);
                 if (label === 'game' && !this.gameHandshakeReceived) {
                     this.gameHandshakeReceived = true;
-                    const handshake = this.engine.getHandshakeBytes();
-                    this.transport.send('game', handshake);
                     this.session.sendGameInitSequence(
                         () => this.getCapabilities(),
                         (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)
@@ -171,7 +165,9 @@ export class GameClient {
                 } else if (label === 'registry' && !this.registryHandshakeReceived) {
                     this.registryHandshakeReceived = true;
                 }
+                continue;
             }
+            this.protocol.processFrame(message, this.state.activeGame);
         }
     }
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import init, { BmEngineWasm, FramerWasm, init_panic_hook, make_handshake_bytes, parse_control_scheme_xml } from './wasm/bronze_monkey';
+import init, { BmEngineWasm, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
 import type { BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
@@ -64,11 +64,6 @@ export class BmEngine {
     createFramer(maxLen?: number): FramerWasm {
         if (!this.wasmEngine) throw new Error("Engine not initialized");
         return new FramerWasm(maxLen);
-    }
-
-    getHandshakeBytes(): Uint8Array {
-        if (!this.wasmEngine) throw new Error("Engine not initialized");
-        return make_handshake_bytes();
     }
 
     registerDevice(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {

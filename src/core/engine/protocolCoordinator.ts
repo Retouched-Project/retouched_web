@@ -2,7 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import type { BmEngine } from '../../bmEngine';
-import { frame, type FramerWasm } from '../../wasm/bronze_monkey';
+import { HandshakerWasm, frame, type FramerWasm } from '../../wasm/bronze_monkey';
 import { WebRtcTransport } from '../webRtcTransport';
 import type { BmEvent, BmOutgoing, BmRegistryInfo } from '../../types';
 import { createLogger } from '../../utils/logger';
@@ -30,6 +30,33 @@ export class ProtocolCoordinator {
         return (this.gameFramerInst ??= this.engine.createFramer());
     }
 
+    // A controller waits for the other side and answers, on both links.
+    private registryHandshakerInst: HandshakerWasm | null = null;
+    private gameHandshakerInst: HandshakerWasm | null = null;
+
+    private handshakerFor(label: string): HandshakerWasm {
+        if (label === 'registry') {
+            return (this.registryHandshakerInst ??= new HandshakerWasm(1));
+        }
+        return (this.gameHandshakerInst ??= new HandshakerWasm(1));
+    }
+
+    /// Answers a version exchange, returning true when the message was one.
+    handleHandshake(label: string, message: Uint8Array): boolean {
+        const outcome = this.handshakerFor(label).onMessage(message) as
+            | { type: 'Passthrough' }
+            | { type: 'Received'; check: string; reply: Uint8Array | null };
+        if (outcome.type !== 'Received') return false;
+
+        if (outcome.reply) {
+            this.transport.send(label === 'registry' ? 'registry' : 'game', frame(outcome.reply));
+        }
+        if (outcome.check !== 'Compatible') {
+            log.error(`${label} version is not compatible: ${outcome.check}`);
+        }
+        return true;
+    }
+
     constructor(engine: BmEngine, transport: WebRtcTransport, handlers: ProtocolHandlers) {
         this.engine = engine;
         this.transport = transport;
@@ -49,21 +76,15 @@ export class ProtocolCoordinator {
         }
     }
 
-    /// Returns true when the message was the version handshake, which the
-    /// caller answers differently per channel.
-    processFrame(data: Uint8Array, activeGame: BmRegistryInfo | null): boolean {
+    processFrame(data: Uint8Array, activeGame: BmRegistryInfo | null) {
         try {
             const out = this.engine.processIncoming(data);
             this.sendOutgoings(out.outgoings, activeGame);
-            let handshake = false;
             for (const event of out.events) {
-                if (event.type === 'Handshake') handshake = true;
                 this.handlers.onEvent(event);
             }
-            return handshake;
         } catch (e) {
             log.error("processIncoming failed:", e);
-            return false;
         }
     }
 
@@ -81,7 +102,12 @@ export class ProtocolCoordinator {
     }
 
     resetFramer(label: string) {
-        if (label === 'game' || label === 'game-unreliable') this.gameFramerInst?.reset();
-        else this.registryFramerInst?.reset();
+        if (label === 'game' || label === 'game-unreliable') {
+            this.gameFramerInst?.reset();
+            this.gameHandshakerInst?.reset();
+        } else {
+            this.registryFramerInst?.reset();
+            this.registryHandshakerInst?.reset();
+        }
     }
 }

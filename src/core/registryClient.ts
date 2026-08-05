@@ -51,9 +51,7 @@ export class RegistryClient {
 
             this.engine.registerDevice('server', 'Registry', 7, host, 0, 8088);
 
-            const handshake = this.engine.getHandshakeBytes();
-            this.onStateUpdate({ registryHandshake: handshake });
-
+            // The registry speaks first, so there is nothing to send here.
             await this.registerWithRegistry(deviceId, host, port, deviceName, typeCode);
         } catch (e) {
             log.error('Local device initialization failed:', e);
