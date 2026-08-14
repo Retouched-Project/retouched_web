@@ -91,9 +91,8 @@ export class TouchProcessor {
         const actions = this.engine.makeTouchSet(targetDeviceId, points);
         this.processActions(actions);
 
-        // Only unreliable (UDP) touches need resending to survive packet loss; the
-        // engine resolves the reliability, so derive the retry need from it.
-        const unreliable = actions.some(a => a.reliability === 0);
+        // Only touches that went out as datagrams need resending to survive loss.
+        const unreliable = actions.some(a => a.prefersDatagram);
         if (retryCount < 3 && unreliable && !this.touchFlushTimer && this.pendingTouches.size > 0) {
             this.touchFlushTimer = setTimeout(() => this.flushTouches(targetDeviceId, retryCount + 1), this.touchIntervalMs);
         }
