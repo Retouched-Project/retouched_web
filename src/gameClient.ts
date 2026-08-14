@@ -34,10 +34,6 @@ export interface GameClientState {
 export type StateCallback = (state: GameClientState) => void;
 
 export class GameClient {
-    private static readonly POLICY_RESPONSE = new TextEncoder().encode(
-        '<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*" to-ports="1008-49151" /></cross-domain-policy>\0'
-    );
-
     private transport: WebRtcTransport;
     private engine: BmEngine;
     private identity: DeviceInfo;
@@ -142,15 +138,17 @@ export class GameClient {
         if (label === 'registry') {
             if (this.registry.handleIncomingData(data)) return;
         }
-        if (label === 'game') {
-            if (this.handlePolicyRequest(data)) return;
+        if (label === 'game' || label === 'game-unreliable') {
             if (this.handleGameJson(data)) return;
         }
-        if (label === 'game-unreliable') {
-            if (this.handleGameJson(data)) return;
+        let stream = data;
+        if (label === 'game') {
+            const payload = this.protocol.filterPolicyRequest(data);
+            if (payload === null) return;
+            stream = payload;
         }
 
-        const messages = this.protocol.handleIncomingData(label, data);
+        const messages = this.protocol.handleIncomingData(label, stream);
         for (const message of messages) {
             // The handshaker answers the version exchange itself; anything it
             // passes on belongs to the engine.
@@ -171,35 +169,14 @@ export class GameClient {
         }
     }
 
-    private isHandlingPolicy = false;
-    private policyBuffer: Uint8Array = new Uint8Array(0);
-
-    private handlePolicyRequest(data: Uint8Array): boolean {
-        if ((data.length > 0 && data[0] === 0x3C) || this.policyBuffer.length > 0) {
-            const newBuffer = new Uint8Array(this.policyBuffer.length + data.length);
-            newBuffer.set(this.policyBuffer);
-            newBuffer.set(data, this.policyBuffer.length);
-            this.policyBuffer = newBuffer;
-
-            if (this.policyBuffer.length >= 23) {
-                this.isHandlingPolicy = true;
-                this.transport.send('game', GameClient.POLICY_RESPONSE);
-                this.policyBuffer = new Uint8Array(0);
-            }
-            return true;
-        }
-        return false;
-    }
-
     private handleGameJson(data: Uint8Array): boolean {
         if (data.length > 0 && data[0] === 0x7B) {
             try {
                 const text = new TextDecoder().decode(data);
                 const msg = JSON.parse(text);
                 if (msg.type === 'game_closed') {
-                    if (this.isHandlingPolicy) {
+                    if (this.protocol.policyHungUp()) {
                         log.info('Ignoring policy socket drop');
-                        this.isHandlingPolicy = false;
                         return true;
                     }
                     log.info('Game closed by server (TCP connection dropped)');

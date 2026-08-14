@@ -2,7 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import type { BmEngine } from '../../bmEngine';
-import { HandshakerWasm, frame, type FramerWasm } from '../../wasm/bronze_monkey';
+import { HandshakerWasm, PolicySnifferWasm, frame, policyResponse, type FramerWasm } from '../../wasm/bronze_monkey';
 import { WebRtcTransport } from '../webRtcTransport';
 import type { BmEvent, BmOutgoing, BmRegistryInfo } from '../../types';
 import { createLogger } from '../../utils/logger';
@@ -57,6 +57,34 @@ export class ProtocolCoordinator {
         return true;
     }
 
+    private gameSnifferInst: PolicySnifferWasm | null = null;
+
+    private get gameSniffer(): PolicySnifferWasm {
+        return (this.gameSnifferInst ??= new PolicySnifferWasm());
+    }
+
+    policyHungUp(): boolean {
+        return this.gameSnifferInst?.hungUp() ?? false;
+    }
+
+    filterPolicyRequest(data: Uint8Array): Uint8Array | null {
+        const sniffer = this.gameSniffer;
+        if (!sniffer.isWatching) return data;
+
+        const sniff = sniffer.feed(data) as
+            | { type: 'Wait' }
+            | { type: 'Answer' }
+            | { type: 'Passthrough'; data: Uint8Array };
+        if (sniff.type === 'Passthrough') return sniff.data;
+        if (sniff.type === 'Answer') {
+            log.info('Answering a cross domain policy request');
+            this.gameFramerInst?.reset();
+            this.gameHandshakerInst?.reset();
+            this.transport.send('game', policyResponse());
+        }
+        return null;
+    }
+
     constructor(engine: BmEngine, transport: WebRtcTransport, handlers: ProtocolHandlers) {
         this.engine = engine;
         this.transport = transport;
@@ -105,6 +133,7 @@ export class ProtocolCoordinator {
         if (label === 'game' || label === 'game-unreliable') {
             this.gameFramerInst?.reset();
             this.gameHandshakerInst?.reset();
+            this.gameSnifferInst?.reset();
         } else {
             this.registryFramerInst?.reset();
             this.registryHandshakerInst?.reset();
