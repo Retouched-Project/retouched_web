@@ -25,7 +25,6 @@ export interface BmRegistryInfo {
 
 export interface BmDeviceRecord {
     core: BmDeviceCore;
-    classId: number | null;
     info: BmRegistryInfo | null;
 }
 
@@ -83,14 +82,3 @@ export interface BmClientState {
     games: BmRegistryInfo[];
     scheme?: unknown;
 }
-
-export const DeviceType = {
-    Any: 0,
-    Unity: 1,
-    IPhone: 2,
-    Flash: 3,
-    Android: 4,
-    Native: 5,
-    Palm: 6,
-    Server: 7,
-};
