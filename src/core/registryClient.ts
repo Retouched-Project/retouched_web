@@ -3,6 +3,7 @@
 
 import type { BmEngine } from '../bmEngine';
 import { DeviceInfo } from './deviceInfo';
+import { EndpointMode } from '../wasm/bronze_monkey';
 import type { BmRegistryInfo } from '../types';
 import { createLogger } from '../utils/logger';
 
@@ -47,7 +48,7 @@ export class RegistryClient {
 
         try {
             this.engine.initLocalDevice(deviceId, deviceName, typeCode, host, 0, port);
-            this.engine.configureRoles(false, 2); // 2 = controller mode
+            this.engine.configureRoles(false, EndpointMode.Controller);
 
             this.engine.registerDevice('server', 'Registry', 7, host, 0, 8088);
 

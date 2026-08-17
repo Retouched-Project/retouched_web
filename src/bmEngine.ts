@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import init, { BmEngineWasm, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
+import init, { BmEngineWasm, EndpointMode, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
 import type { BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
@@ -51,7 +51,7 @@ export class BmEngine {
         }
     }
 
-    configureRoles(serverEnabled: boolean, endpointMode: number) {
+    configureRoles(serverEnabled: boolean, endpointMode?: EndpointMode) {
         try {
             this.engine.configure_roles(serverEnabled, endpointMode);
         } catch (e) {
