@@ -15,6 +15,7 @@ import { TouchProcessor } from './core/touchProcessor';
 import { SensorProcessor, type SensorStatus } from './core/sensorProcessor';
 import { ProtocolCoordinator } from './core/engine/protocolCoordinator';
 import { SchemeService } from './core/engine/schemeService';
+import { EndpointMode } from './wasm/bronze_monkey';
 import { createLogger } from './utils/logger';
 
 const log = createLogger('GameClient');
@@ -200,12 +201,13 @@ export class GameClient {
     /// connects. Sensor probing finishes later than that can be, so it is handed
     /// what is known and told again when the probe lands.
     private applySessionInputs(capabilities: number) {
-        this.engine.openSessionsAutomatically(
-            (capabilities & 1) !== 0,
-            (capabilities & 2) !== 0,
-            window.innerWidth,
-            window.innerHeight,
-        );
+        this.engine.configure({
+            endpoint: EndpointMode.Controller,
+            gyroscope: (capabilities & 1) !== 0,
+            orientation: (capabilities & 2) !== 0,
+            screenWidth: window.innerWidth,
+            screenHeight: window.innerHeight,
+        });
     }
 
     private handleEvent(ev: BmEvent) {

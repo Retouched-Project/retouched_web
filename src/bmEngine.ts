@@ -51,19 +51,31 @@ export class BmEngine {
         }
     }
 
-    /// Hands the engine what this controller is, and lets it open sessions:
-    /// it says the right things in the right order once a game acknowledges.
-    openSessionsAutomatically(gyroscope: boolean, orientation: boolean, width: number, height: number) {
-        this.engine.openSessionsAutomatically(gyroscope, orientation, width, height);
-    }
-
-    configureRoles(serverEnabled: boolean, endpointMode?: EndpointMode) {
-        try {
-            this.engine.configure_roles(serverEnabled, endpointMode);
-        } catch (e) {
-            log.error("configure_roles WASM panic:", e);
-            throw e;
-        }
+    /// Everything the engine is told about itself. Pass the whole of it whenever
+    /// any of it changes; the engine holds nothing over from a previous call.
+    ///
+    /// A controller that opens its own sessions needs a screen, since it asks a
+    /// game for a scheme to fit it.
+    configure(config: {
+        server?: boolean;
+        endpoint?: EndpointMode;
+        opensSessions?: boolean;
+        gyroscope?: boolean;
+        orientation?: boolean;
+        screenWidth?: number;
+        screenHeight?: number;
+        approvesRegistrations?: boolean;
+    }) {
+        this.engine.configure({
+            server: config.server ?? false,
+            endpoint: config.endpoint,
+            opensSessions: config.opensSessions ?? true,
+            gyroscope: config.gyroscope ?? false,
+            orientation: config.orientation ?? false,
+            screenWidth: config.screenWidth ?? 0,
+            screenHeight: config.screenHeight ?? 0,
+            approvesRegistrations: config.approvesRegistrations ?? true,
+        });
     }
 
     /// Rejects messages longer than maxLen, or the library ceiling by default.
