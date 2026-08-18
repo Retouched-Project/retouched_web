@@ -132,7 +132,6 @@ export class GameClient {
     }
 
     private registryHandshakeReceived = false;
-    private gameHandshakeReceived = false;
 
     private handleTransportMessage(label: string, data: Uint8Array) {
         if (label === 'registry') {
@@ -154,13 +153,7 @@ export class GameClient {
             // passes on belongs to the engine.
             if (this.protocol.handleHandshake(label, message)) {
                 log.info(`Received ${label} handshake`);
-                if (label === 'game' && !this.gameHandshakeReceived) {
-                    this.gameHandshakeReceived = true;
-                    this.session.sendGameInitSequence(
-                        () => this.getCapabilities(),
-                        (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)
-                    );
-                } else if (label === 'registry' && !this.registryHandshakeReceived) {
+                if (label === 'registry' && !this.registryHandshakeReceived) {
                     this.registryHandshakeReceived = true;
                 }
                 continue;
@@ -198,7 +191,21 @@ export class GameClient {
 
         this.protocol.resetFramer('registry');
         this.protocol.resetFramer('game');
+        this.applySessionInputs(0);
+        this.getCapabilities().then((caps) => this.applySessionInputs(caps));
         await this.transport.connect();
+    }
+
+    /// The engine opens game sessions from these, so it needs them before a game
+    /// connects. Sensor probing finishes later than that can be, so it is handed
+    /// what is known and told again when the probe lands.
+    private applySessionInputs(capabilities: number) {
+        this.engine.openSessionsAutomatically(
+            (capabilities & 1) !== 0,
+            (capabilities & 2) !== 0,
+            window.innerWidth,
+            window.innerHeight,
+        );
     }
 
     private handleEvent(ev: BmEvent) {
@@ -253,7 +260,6 @@ export class GameClient {
 
     async joinGame(game: BmRegistryInfo) {
         this.protocol.resetFramer('game');
-        this.gameHandshakeReceived = false;
         this.updateState({ progress: 0, scheme: null });
         this.session.joinGame(game, this.selfInfo);
     }
@@ -261,6 +267,7 @@ export class GameClient {
     async setCapabilitiesOverride(mask: number | null) {
         this.capabilitiesOverride = mask;
         this.cachedCapabilities = null;
+        this.applySessionInputs(await this.getCapabilities());
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
             const caps = await this.getCapabilities();
@@ -360,7 +367,6 @@ export class GameClient {
         this.disconnectGame();
         this.transport.close();
         this.registryHandshakeReceived = false;
-        this.gameHandshakeReceived = false;
         this.updateState({ connected: false, activeGame: null, scheme: null, progress: 0, games: [] });
     }
 

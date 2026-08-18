@@ -51,6 +51,12 @@ export class BmEngine {
         }
     }
 
+    /// Hands the engine what this controller is, and lets it open sessions:
+    /// it says the right things in the right order once a game acknowledges.
+    openSessionsAutomatically(gyroscope: boolean, orientation: boolean, width: number, height: number) {
+        this.engine.openSessionsAutomatically(gyroscope, orientation, width, height);
+    }
+
     configureRoles(serverEnabled: boolean, endpointMode?: EndpointMode) {
         try {
             this.engine.configure_roles(serverEnabled, endpointMode);

@@ -75,23 +75,6 @@ export class GameSession {
         });
     }
 
-    async sendGameInitSequence(getCapabilities: () => Promise<number>, sendAction: (payload: BmOutgoing[]) => void) {
-        if (!this.activeGame) return;
-
-        const targetId = this.activeGame.device.deviceId;
-
-        const caps = await getCapabilities();
-        log.info(`Sending setCapabilities to game (mask=${caps})...`);
-        const capActions = this.engine.makeSetCapabilities(targetId, caps);
-        sendAction(capActions);
-
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        log.info(`Sending requestXml (${screenWidth}x${screenHeight}) to game...`);
-        const xmlActions = this.engine.makeRequestXml(targetId, screenWidth, screenHeight);
-        sendAction(xmlActions);
-    }
-
     setPaused(paused: boolean, sendAction: (payload: BmOutgoing[]) => void) {
         if (!this.activeGame || this.isPaused === paused) return;
         this.isPaused = paused;
