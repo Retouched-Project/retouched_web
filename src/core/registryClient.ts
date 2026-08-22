@@ -48,7 +48,7 @@ export class RegistryClient {
         try {
             this.engine.initLocalDevice(deviceId, deviceName, typeCode, host, 0, port);
 
-            this.engine.registerDevice('server', 'Registry', 7, host, 0, 8088);
+            this.engine.declarePeer('server', 'Registry', 7, host, 0, 8088);
 
             // The registry speaks first, so there is nothing to send here.
             await this.registerWithRegistry(deviceId, host, port, deviceName, typeCode);
@@ -102,14 +102,12 @@ export class RegistryClient {
 
     // Full host-list snapshot (the server's onList reply to registry.list).
     onHostsReceived(infos: BmRegistryInfo[]): void {
-        infos.forEach(game => this.registerGame(game));
         this.onStateUpdate({ games: infos });
         this.onRegistrationResult();
     }
 
     // A single host appeared or had its info updated.
     onHostUpsert(info: BmRegistryInfo, currentGames: BmRegistryInfo[]): void {
-        this.registerGame(info);
         const updatedGames = [...currentGames];
         const idx = updatedGames.findIndex(g => g.device.deviceId === info.device.deviceId);
         if (idx >= 0) updatedGames[idx] = info;
@@ -121,16 +119,5 @@ export class RegistryClient {
         const removeId = info.device.deviceId;
         const updatedGames = currentGames.filter(g => g.device.deviceId !== removeId);
         this.onStateUpdate({ games: updatedGames, disconnectedIds: [removeId] });
-    }
-
-    private registerGame(game: BmRegistryInfo): void {
-        this.engine.registerDevice(
-            game.device.deviceId,
-            game.device.deviceName,
-            game.device.deviceType,
-            game.deviceAddress.address,
-            game.deviceAddress.unreliablePort,
-            game.deviceAddress.reliablePort
-        );
     }
 }

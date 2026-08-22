@@ -25,12 +25,7 @@ export class GameSession {
         this.onStateUpdate = onStateUpdate;
     }
 
-    joinGame(game: BmRegistryInfo, selfInfo: BmRegistryInfo | null) {
-        if (!selfInfo) {
-            log.error('Cannot join game: selfInfo not set');
-            return;
-        }
-
+    joinGame(game: BmRegistryInfo) {
         log.info('Joining game:', game.device.deviceName);
         this.activeGame = game;
         this.isPaused = false;
@@ -41,11 +36,7 @@ export class GameSession {
             scheme: null
         });
 
-        const actions = this.engine.makeDeviceConnectRequested(
-            'server',
-            game,
-            selfInfo
-        );
+        const actions = this.engine.makeDeviceConnectRequested('server', game.device.deviceId);
 
         this.onStateUpdate({ actionsToProcess: actions });
         MetricsService.send(MetricsService.SESSION_START, game.appId ?? '', this.identity.getDeviceId());

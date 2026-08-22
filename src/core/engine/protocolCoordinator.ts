@@ -4,7 +4,7 @@
 import type { BmEngine } from '../../bmEngine';
 import { HandshakerWasm, PolicySnifferWasm, frame, policyResponse, type FramerWasm } from '../../wasm/bronze_monkey';
 import { WebRtcTransport } from '../webRtcTransport';
-import type { BmEvent, BmOutgoing, BmRegistryInfo } from '../../types';
+import type { BmEvent, BmOutgoing, BmVia } from '../../types';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('ProtocolCoordinator');
@@ -104,10 +104,12 @@ export class ProtocolCoordinator {
         }
     }
 
-    processFrame(data: Uint8Array, activeGame: BmRegistryInfo | null) {
+    processFrame(data: Uint8Array) {
         try {
+            // A data channel carries no address, so there is nothing to report
+            // about where this came from.
             const out = this.engine.processIncoming(data);
-            this.sendOutgoings(out.outgoings, activeGame);
+            this.sendOutgoings(out.outgoings);
             for (const event of out.events) {
                 this.handlers.onEvent(event);
             }
@@ -116,17 +118,26 @@ export class ProtocolCoordinator {
         }
     }
 
-    sendOutgoings(outgoings: BmOutgoing[], activeGame: BmRegistryInfo | null) {
+    /// The payload is ready to write, so this only has to pick a channel.
+    sendOutgoings(outgoings: BmOutgoing[]) {
         for (const o of outgoings) {
-            const isGameTarget = !!activeGame && o.targetDeviceId === activeGame.device.deviceId;
-            if (isGameTarget && o.prefersDatagram) {
-                // A datagram carries the message as it is.
-                this.transport.send('game-unreliable', o.payload);
-            } else {
-                // A stream needs the length in front.
-                this.transport.send(isGameTarget ? 'game' : 'registry', frame(o.payload));
-            }
+            this.transport.send(this.channelFor(o.targetDeviceId, o.via), o.payload);
         }
+    }
+
+    // The engine names an address for a datagram; a data channel already leads
+    // to the peer, so only the kind of path matters here.
+    private channelFor(deviceId: string, via: BmVia): string {
+        if (via.type === 'Datagram') return 'game-unreliable';
+        return this.gameDeviceId === deviceId ? 'game' : 'registry';
+    }
+
+    /// Which peer the game channels lead to. The engine addresses a device;
+    /// only this side knows which channel reaches it.
+    private gameDeviceId: string | null = null;
+
+    setGameDeviceId(deviceId: string | null) {
+        this.gameDeviceId = deviceId;
     }
 
     resetFramer(label: string) {

@@ -55,7 +55,6 @@ export class GameClient {
         port: 0,
     };
     private listeners: StateCallback[] = [];
-    private selfInfo: BmRegistryInfo | null = null;
     private closed = false;
 
     private capabilitiesOverride: number | null = null;
@@ -73,8 +72,8 @@ export class GameClient {
             onEvent: (ev) => this.handleEvent(ev),
         });
         this.schemes = new SchemeService();
-        this.touch = new TouchProcessor(this.engine, (a) => this.protocol.sendOutgoings(a, this.state.activeGame));
-        this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.sendOutgoings(a, this.state.activeGame));
+        this.touch = new TouchProcessor(this.engine, (a) => this.protocol.sendOutgoings(a));
+        this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.sendOutgoings(a));
         this.sensors.onStatusChange = (status) => this.updateState({ sensorStatus: status });
 
         this.setupTransportListeners();
@@ -83,11 +82,11 @@ export class GameClient {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private handleDelegateUpdate(partial: any) {
         if (partial.actionsToProcess) {
-            this.protocol.sendOutgoings(partial.actionsToProcess, this.state.activeGame);
+            this.protocol.sendOutgoings(partial.actionsToProcess);
             delete partial.actionsToProcess;
         }
         if (partial.selfInfo) {
-            this.selfInfo = partial.selfInfo;
+            // The engine keeps what it registered, so nothing here needs it.
             delete partial.selfInfo;
         }
         if (partial.disconnectedIds) {
@@ -159,7 +158,7 @@ export class GameClient {
                 }
                 continue;
             }
-            this.protocol.processFrame(message, this.state.activeGame);
+            this.protocol.processFrame(message);
         }
     }
 
@@ -207,6 +206,8 @@ export class GameClient {
             orientation: (capabilities & 2) !== 0,
             screenWidth: window.innerWidth,
             screenHeight: window.innerHeight,
+            // No socket here, but the unreliable channel reaches one.
+            datagrams: true,
         });
     }
 
@@ -263,7 +264,8 @@ export class GameClient {
     async joinGame(game: BmRegistryInfo) {
         this.protocol.resetFramer('game');
         this.updateState({ progress: 0, scheme: null });
-        this.session.joinGame(game, this.selfInfo);
+        this.protocol.setGameDeviceId(game.device.deviceId);
+        this.session.joinGame(game);
     }
 
     async setCapabilitiesOverride(mask: number | null) {
@@ -273,7 +275,7 @@ export class GameClient {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
             const caps = await this.getCapabilities();
-            this.protocol.sendOutgoings(this.engine.makeSetCapabilities(activeGame.device.deviceId, caps), activeGame);
+            this.protocol.sendOutgoings(this.engine.makeSetCapabilities(activeGame.device.deviceId, caps));
         }
     }
 
@@ -305,14 +307,14 @@ export class GameClient {
     sendButton(handler: string, pressed: boolean) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            this.protocol.sendOutgoings(this.engine.makeButtonInvoke(activeGame.device.deviceId, handler, pressed), activeGame);
+            this.protocol.sendOutgoings(this.engine.makeButtonInvoke(activeGame.device.deviceId, handler, pressed));
         }
     }
 
     sendDpad(x: number, y: number) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            this.protocol.sendOutgoings(this.engine.makeDpadUpdate(activeGame.device.deviceId, x, y), activeGame);
+            this.protocol.sendOutgoings(this.engine.makeDpadUpdate(activeGame.device.deviceId, x, y));
         }
     }
 
@@ -322,7 +324,7 @@ export class GameClient {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
             const outgoings = this.engine.emit({ type: 'SendKeyString', target: activeGame.device.deviceId, key });
-            this.protocol.sendOutgoings(outgoings, activeGame);
+            this.protocol.sendOutgoings(outgoings);
         }
     }
 
@@ -332,15 +334,15 @@ export class GameClient {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
             const outgoings = this.engine.emit({ type: 'SendNavigation', target: activeGame.device.deviceId, nav });
-            this.protocol.sendOutgoings(outgoings, activeGame);
+            this.protocol.sendOutgoings(outgoings);
         }
     }
 
-    sendPause() { this.session.setPaused(true, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
-    sendResume() { this.session.setPaused(false, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame)); }
+    sendPause() { this.session.setPaused(true, (actions) => this.protocol.sendOutgoings(actions)); }
+    sendResume() { this.session.setPaused(false, (actions) => this.protocol.sendOutgoings(actions)); }
 
     sendMenuEvent(event: string) {
-        this.session.sendMenuEvent(event, (actions) => this.protocol.sendOutgoings(actions, this.state.activeGame));
+        this.session.sendMenuEvent(event, (actions) => this.protocol.sendOutgoings(actions));
     }
 
     handleTouchSet(touches: Array<{ id: number, x: number, y: number, state: number }>, screenWidth: number, screenHeight: number) {
@@ -351,9 +353,8 @@ export class GameClient {
     }
 
     disconnectGame() {
-        const activeGame = this.session.getActiveGame();
         this.session.disconnectGame(
-            (actions) => this.protocol.sendOutgoings(actions, activeGame),
+            (actions) => this.protocol.sendOutgoings(actions),
             (payload) => this.transport.send('game', payload)
         );
         assetManager.dispose();
@@ -438,7 +439,7 @@ export class GameClient {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
             const actions = this.engine.makeOnControlSchemeParsed(activeGame.device.deviceId);
-            this.protocol.sendOutgoings(actions, activeGame);
+            this.protocol.sendOutgoings(actions);
         }
     }
 

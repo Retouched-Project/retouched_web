@@ -2,7 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import init, { BmEngineWasm, EndpointMode, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
-import type { BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
+import type { BmArrival, BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
 const log = createLogger('BmEngine');
@@ -65,6 +65,7 @@ export class BmEngine {
         screenWidth?: number;
         screenHeight?: number;
         approvesRegistrations?: boolean;
+        datagrams?: boolean;
     }) {
         this.engine.configure({
             server: config.server ?? false,
@@ -75,6 +76,7 @@ export class BmEngine {
             screenWidth: config.screenWidth ?? 0,
             screenHeight: config.screenHeight ?? 0,
             approvesRegistrations: config.approvesRegistrations ?? true,
+            datagrams: config.datagrams ?? false,
         });
     }
 
@@ -84,17 +86,21 @@ export class BmEngine {
         return new FramerWasm(maxLen);
     }
 
-    registerDevice(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {
+    /// Tells the engine about a peer it could not have learned about on its
+    /// own, at an address known out of band.
+    declarePeer(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {
         try {
-            this.engine.register_device(id, name, typeCode, address, unreliablePort, reliablePort);
+            this.engine.declare_peer(id, name, typeCode, address, unreliablePort, reliablePort);
         } catch (e) {
-            log.error("register_device WASM panic:", e);
+            log.error("declare_peer WASM panic:", e);
             throw e;
         }
     }
 
-    processIncoming(data: Uint8Array): BmProcessOutput {
-        return this.engine.process_incoming(data) as BmProcessOutput;
+    /// `arrival` is what the transport knows about where the bytes came from.
+    /// A relayed transport knows nothing and passes nothing.
+    processIncoming(data: Uint8Array, arrival?: BmArrival): BmProcessOutput {
+        return this.engine.process_incoming(data, arrival) as BmProcessOutput;
     }
 
     emit(command: unknown): BmOutgoing[] {
@@ -117,8 +123,8 @@ export class BmEngine {
         return this.emit({ type: 'RequestHostList', target: targetId, returnMethod: null });
     }
 
-    makeDeviceConnectRequested(targetId: string, game: BmRegistryInfo, controller: BmRegistryInfo): BmOutgoing[] {
-        return this.emit({ type: 'ConnectToHost', target: targetId, host: game, selfInfo: controller });
+    makeDeviceConnectRequested(targetId: string, gameDeviceId: string): BmOutgoing[] {
+        return this.emit({ type: 'ConnectToHost', target: targetId, hostId: gameDeviceId });
     }
 
     makeSetControlMode(targetId: string, mode: ControlMode, text?: string): BmOutgoing[] {

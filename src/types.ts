@@ -28,11 +28,26 @@ export interface BmDeviceRecord {
     info: BmRegistryInfo | null;
 }
 
+/// Which path the payload is built for, and where it leads. The bytes are
+/// already shaped for the path. A transport that reaches the peer another way
+/// ignores the address and uses the path it has.
+export type BmVia =
+    | { type: 'Stream' }
+    | { type: 'Datagram'; address: string; port: number };
+
+/// What a transport knows about bytes it received. A relayed transport knows
+/// none of it and sends nothing.
+export interface BmArrival {
+    source?: string;
+    sourcePort?: number;
+    datagram?: boolean;
+}
+
 export interface BmOutgoing {
     targetDeviceId: string;
     channel: number;
     reliability: number;
-    prefersDatagram: boolean;
+    via: BmVia;
     payload: Uint8Array;
 }
 

@@ -92,7 +92,7 @@ export class TouchProcessor {
         this.processActions(actions);
 
         // Only touches that went out as datagrams need resending to survive loss.
-        const unreliable = actions.some(a => a.prefersDatagram);
+        const unreliable = actions.some(a => a.via.type === 'Datagram');
         if (retryCount < 3 && unreliable && !this.touchFlushTimer && this.pendingTouches.size > 0) {
             this.touchFlushTimer = setTimeout(() => this.flushTouches(targetDeviceId, retryCount + 1), this.touchIntervalMs);
         }
