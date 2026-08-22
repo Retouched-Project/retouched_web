@@ -119,6 +119,12 @@ export class BmEngine {
         return this.emit({ type: 'Register', target: targetId, info, domain, returnMethod: null });
     }
 
+    /// Releases what the engine held for a peer that is gone. Its outgoings are
+    /// notices owed to anyone still watching, so they still have to be written.
+    peerGone(deviceId: string): BmOutgoing[] {
+        return this.emit({ type: 'PeerGone', deviceId });
+    }
+
     makeRegistryList(targetId: string): BmOutgoing[] {
         return this.emit({ type: 'RequestHostList', target: targetId, returnMethod: null });
     }

@@ -80,6 +80,7 @@ export type BmEvent =
     | { type: 'HostList'; infos: BmRegistryInfo[] }
     | { type: 'DeviceConnectRequested'; info: BmRegistryInfo }
     | { type: 'DeviceKilled'; deviceId: string }
+    | { type: 'PeerGone'; deviceId: string }
     | { type: 'Vibrate'; sender: string }
     | { type: 'Pause'; sender: string }
     | ({ type: 'ControlConfig' } & BmControlConfig)

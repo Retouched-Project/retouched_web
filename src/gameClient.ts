@@ -173,6 +173,10 @@ export class GameClient {
                         return true;
                     }
                     log.info('Game closed by server (TCP connection dropped)');
+                    const gone = this.session.getActiveGame();
+                    if (gone) {
+                        this.protocol.sendOutgoings(this.engine.peerGone(gone.device.deviceId));
+                    }
                     this.disconnectGame();
                     return true;
                 }
