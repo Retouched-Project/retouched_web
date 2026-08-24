@@ -31,7 +31,7 @@ export class SensorProcessor {
     private orientationDeviceHandler: ((e: DeviceOrientationEvent) => void) | null = null;
     private orientationTimer: ReturnType<typeof setInterval> | null = null;
     private lastOrientationSentAt = 0;
-    private orientationIntervalMs = 50;
+    private orientationIntervalMs = 100;
 
     private static permissionGranted: boolean | null = null;
     onStatusChange?: (status: SensorStatus) => void;
@@ -382,7 +382,7 @@ export class SensorProcessor {
         this.stopOrientation();
         this.accelIntervalMs = 100;
         this.gyroIntervalMs = 100;
-        this.orientationIntervalMs = 50;
+        this.orientationIntervalMs = 100;
         this.orientationEnabled = false;
         this.lastAccelSentAt = 0;
         this.lastGyroSentAt = 0;
