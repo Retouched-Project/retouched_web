@@ -103,6 +103,13 @@ export class BmEngine {
         return this.engine.process_incoming(data, arrival) as BmProcessOutput;
     }
 
+    /// Tells the engine what time it is, in whole milliseconds on any
+    /// monotonic clock. Anything due fires, and the output names the next
+    /// wanted moment.
+    handleTime(nowMs: number): BmProcessOutput {
+        return this.engine.handle_time(nowMs) as BmProcessOutput;
+    }
+
     emit(command: unknown): BmOutgoing[] {
         return this.engine.emit(command) as BmOutgoing[];
     }

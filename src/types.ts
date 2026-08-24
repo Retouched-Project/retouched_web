@@ -41,6 +41,7 @@ export interface BmArrival {
     source?: string;
     sourcePort?: number;
     datagram?: boolean;
+    nowMs?: number;
 }
 
 export interface BmOutgoing {
@@ -89,6 +90,7 @@ export type BmEvent =
     | { type: 'ChunkComplete'; deviceId: string; setId: string; blob: Uint8Array };
 
 export interface BmProcessOutput {
+    nextTimeMs?: number | null;
     events: BmEvent[];
     outgoings: BmOutgoing[];
 }
