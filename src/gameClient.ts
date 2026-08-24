@@ -327,8 +327,8 @@ export class GameClient {
     sendKeyString(key: string) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            const outgoings = this.engine.emit({ type: 'SendKeyString', target: activeGame.device.deviceId, key });
-            this.protocol.sendOutgoings(outgoings);
+            const out = this.engine.emit({ type: 'SendKeyString', target: activeGame.device.deviceId, key });
+            this.protocol.sendOutgoings(out.outgoings);
         }
     }
 
@@ -337,8 +337,8 @@ export class GameClient {
     sendNavigation(nav: string) {
         const activeGame = this.session.getActiveGame();
         if (activeGame) {
-            const outgoings = this.engine.emit({ type: 'SendNavigation', target: activeGame.device.deviceId, nav });
-            this.protocol.sendOutgoings(outgoings);
+            const out = this.engine.emit({ type: 'SendNavigation', target: activeGame.device.deviceId, nav });
+            this.protocol.sendOutgoings(out.outgoings);
         }
     }
 

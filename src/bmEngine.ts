@@ -110,8 +110,10 @@ export class BmEngine {
         return this.engine.handle_time(nowMs) as BmProcessOutput;
     }
 
-    emit(command: unknown): BmOutgoing[] {
-        return this.engine.emit(command) as BmOutgoing[];
+    /// Throws when the command itself was wrong. A send to a peer that has
+    /// since left is not an error and comes back with nothing to send.
+    emit(command: unknown): BmProcessOutput {
+        return this.engine.emit(command) as BmProcessOutput;
     }
 
     registerButtonHandlers(handlers: string[]) {
@@ -123,25 +125,25 @@ export class BmEngine {
     }
 
     makeRegistryRegister(targetId: string, info: BmRegistryInfo, domain: string): BmOutgoing[] {
-        return this.emit({ type: 'Register', target: targetId, info, domain, returnMethod: null });
+        return this.emit({ type: 'Register', target: targetId, info, domain, returnMethod: null }).outgoings;
     }
 
     /// Releases what the engine held for a peer that is gone. Its outgoings are
     /// notices owed to anyone still watching, so they still have to be written.
     peerGone(deviceId: string): BmOutgoing[] {
-        return this.emit({ type: 'PeerGone', deviceId });
+        return this.emit({ type: 'PeerGone', deviceId }).outgoings;
     }
 
     makeRegistryList(targetId: string): BmOutgoing[] {
-        return this.emit({ type: 'RequestHostList', target: targetId, returnMethod: null });
+        return this.emit({ type: 'RequestHostList', target: targetId, returnMethod: null }).outgoings;
     }
 
     makeDeviceConnectRequested(targetId: string, gameDeviceId: string): BmOutgoing[] {
-        return this.emit({ type: 'ConnectToHost', target: targetId, hostId: gameDeviceId });
+        return this.emit({ type: 'ConnectToHost', target: targetId, hostId: gameDeviceId }).outgoings;
     }
 
     makeSetControlMode(targetId: string, mode: ControlMode, text?: string): BmOutgoing[] {
-        return this.emit({ type: 'SetControlMode', target: targetId, mode, text: text ?? null });
+        return this.emit({ type: 'SetControlMode', target: targetId, mode, text: text ?? null }).outgoings;
     }
 
     makeEnableAccelerometer(targetId: string, enabled: boolean, interval?: number): BmOutgoing[] {
@@ -151,32 +153,32 @@ export class BmEngine {
             sensor: 'Accel',
             enabled,
             intervalMs: interval ?? null,
-        });
+        }).outgoings;
     }
 
     makeAccel(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
-        return this.emit({ type: 'SendAccel', target: targetId, x, y, z });
+        return this.emit({ type: 'SendAccel', target: targetId, x, y, z }).outgoings;
     }
 
     makeGyro(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
-        return this.emit({ type: 'SendGyro', target: targetId, x, y, z });
+        return this.emit({ type: 'SendGyro', target: targetId, x, y, z }).outgoings;
     }
 
     makeOrientation(targetId: string, x: number, y: number, z: number, w: number): BmOutgoing[] {
-        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w });
+        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w }).outgoings;
     }
 
     makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmOutgoing[] {
-        return this.emit({ type: 'SendButton', target: targetId, handler, pressed });
+        return this.emit({ type: 'SendButton', target: targetId, handler, pressed }).outgoings;
     }
 
     makeDpadUpdate(targetId: string, x: number, y: number): BmOutgoing[] {
-        return this.emit({ type: 'SendDPad', target: targetId, x, y });
+        return this.emit({ type: 'SendDPad', target: targetId, x, y }).outgoings;
     }
 
     // The requesting device id is the engine's own, so it is no longer passed in.
     makeRequestXml(targetId: string, width: number, height: number): BmOutgoing[] {
-        return this.emit({ type: 'RequestControlScheme', target: targetId, width, height });
+        return this.emit({ type: 'RequestControlScheme', target: targetId, width, height }).outgoings;
     }
 
     makeSetCapabilities(targetId: string, caps: number): BmOutgoing[] {
@@ -185,15 +187,15 @@ export class BmEngine {
             target: targetId,
             gyroscope: (caps & 1) !== 0,
             orientation: (caps & 2) !== 0,
-        });
+        }).outgoings;
     }
 
     makeOnControlSchemeParsed(targetId: string): BmOutgoing[] {
-        return this.emit({ type: 'ControlSchemeParsed', target: targetId });
+        return this.emit({ type: 'ControlSchemeParsed', target: targetId }).outgoings;
     }
 
     makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>): BmOutgoing[] {
-        return this.emit({ type: 'SendTouch', target: targetId, touches: points });
+        return this.emit({ type: 'SendTouch', target: targetId, touches: points }).outgoings;
     }
 
     makeSimpleInvoke(targetId: string, method: string, returnVal?: string | null, param?: string | null): BmOutgoing[] {
@@ -203,7 +205,7 @@ export class BmEngine {
             method,
             returnMethod: returnVal ?? null,
             params: param == null ? [] : [{ String: param }],
-        });
+        }).outgoings;
     }
 
     parseControlSchemeXml(xml: string): Uint8Array {
