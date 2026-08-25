@@ -162,17 +162,19 @@ export class BmEngine {
     }
 
     /// Sensor sends are paced by the engine at the interval the game asked for,
-    /// so a reading offered before its turn comes back as nothing to send.
-    makeAccel(targetId: string, x: number, y: number, z: number, nowMs: number): BmOutgoing[] {
-        return this.emit({ type: 'SendAccel', target: targetId, x, y, z }, nowMs).outgoings;
+    /// so a reading offered before its turn comes back with nothing to send.
+    /// These return the whole output because `nextSendMs` is the point: hold on
+    /// to it and skip the call until then.
+    makeAccel(targetId: string, x: number, y: number, z: number, nowMs: number): BmProcessOutput {
+        return this.emit({ type: 'SendAccel', target: targetId, x, y, z }, nowMs);
     }
 
-    makeGyro(targetId: string, x: number, y: number, z: number, nowMs: number): BmOutgoing[] {
-        return this.emit({ type: 'SendGyro', target: targetId, x, y, z }, nowMs).outgoings;
+    makeGyro(targetId: string, x: number, y: number, z: number, nowMs: number): BmProcessOutput {
+        return this.emit({ type: 'SendGyro', target: targetId, x, y, z }, nowMs);
     }
 
-    makeOrientation(targetId: string, x: number, y: number, z: number, w: number, nowMs: number): BmOutgoing[] {
-        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w }, nowMs).outgoings;
+    makeOrientation(targetId: string, x: number, y: number, z: number, w: number, nowMs: number): BmProcessOutput {
+        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w }, nowMs);
     }
 
     makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmOutgoing[] {

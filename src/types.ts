@@ -90,7 +90,13 @@ export type BmEvent =
     | { type: 'ChunkComplete'; deviceId: string; setId: string; blob: Uint8Array };
 
 export interface BmProcessOutput {
+    /// When the engine next wants to hear from the clock, across everything it
+    /// has scheduled. For a timer.
     nextTimeMs?: number | null;
+    /// The earliest moment a send of the kind just emitted would be accepted,
+    /// when that send was weighed against a cadence. For skipping calls that
+    /// have no chance.
+    nextSendMs?: number | null;
     events: BmEvent[];
     outgoings: BmOutgoing[];
 }

@@ -28,6 +28,10 @@ export class SensorProcessor {
     private orientationTimer: ReturnType<typeof setInterval> | null = null;
     private orientationIntervalMs = 100;
 
+    private accelNextMs: number | null = null;
+    private gyroNextMs: number | null = null;
+    private orientationNextMs: number | null = null;
+
     private static permissionGranted: boolean | null = null;
     onStatusChange?: (status: SensorStatus) => void;
 
@@ -75,13 +79,17 @@ export class SensorProcessor {
                 s.onreading = () => {
                     this.accelGotReading = true;
                     this.lastAccelEvent = { x: s.x ?? 0, y: s.y ?? 0, z: s.z ?? 0 };
-                    this.processActions(this.engine.makeAccel(
+                    const now = Date.now();
+                    if (this.accelNextMs !== null && now < this.accelNextMs) return;
+                    const out = this.engine.makeAccel(
                         targetDeviceId,
                         (s.x ?? 0) / -9.80665,
                         (s.y ?? 0) / -9.80665,
                         (s.z ?? 0) / -9.80665,
-                        Date.now()
-                    ));
+                        now
+                    );
+                    this.accelNextMs = out.nextSendMs ?? null;
+                    this.processActions(out.outgoings);
                 };
                 s.start();
                 this.accelSensor = s;
@@ -99,19 +107,24 @@ export class SensorProcessor {
                 if (!a) return;
                 this.accelGotReading = true;
                 this.lastAccelEvent = { x: a.x ?? 0, y: a.y ?? 0, z: a.z ?? 0 };
-                this.processActions(this.engine.makeAccel(
+                const now = Date.now();
+                if (this.accelNextMs !== null && now < this.accelNextMs) return;
+                const out = this.engine.makeAccel(
                     targetDeviceId,
                     (a.x ?? 0) / -9.80665,
                     (a.y ?? 0) / -9.80665,
                     (a.z ?? 0) / -9.80665,
-                    Date.now()
-                ));
+                    now
+                );
+                this.accelNextMs = out.nextSendMs ?? null;
+                this.processActions(out.outgoings);
             };
             window.addEventListener('devicemotion', this.accelDeviceMotionHandler);
         }
     }
 
     stopAccel() {
+        this.accelNextMs = null;
         if (this.accelSensor) {
             this.accelSensor.stop();
             this.accelSensor = null;
@@ -149,13 +162,17 @@ export class SensorProcessor {
                 const s = new Gyroscope({ frequency: 60 });
                 s.onreading = () => {
                     this.gyroGotReading = true;
-                    this.processActions(this.engine.makeGyro(
+                    const now = Date.now();
+                    if (this.gyroNextMs !== null && now < this.gyroNextMs) return;
+                    const out = this.engine.makeGyro(
                         targetDeviceId,
                         s.x ?? 0,
                         s.y ?? 0,
                         s.z ?? 0,
-                        Date.now()
-                    ));
+                        now
+                    );
+                    this.gyroNextMs = out.nextSendMs ?? null;
+                    this.processActions(out.outgoings);
                 };
                 s.start();
                 this.gyroSensor = s;
@@ -173,19 +190,24 @@ export class SensorProcessor {
                 if (!r) return;
                 this.gyroGotReading = true;
                 const d2r = Math.PI / 180;
-                this.processActions(this.engine.makeGyro(
+                const now = Date.now();
+                if (this.gyroNextMs !== null && now < this.gyroNextMs) return;
+                const out = this.engine.makeGyro(
                     targetDeviceId,
                     (r.alpha ?? 0) * d2r,
                     (r.beta ?? 0) * d2r,
                     (r.gamma ?? 0) * d2r,
-                    Date.now()
-                ));
+                    now
+                );
+                this.gyroNextMs = out.nextSendMs ?? null;
+                this.processActions(out.outgoings);
             };
             window.addEventListener('devicemotion', this.gyroDeviceMotionHandler);
         }
     }
 
     stopGyro() {
+        this.gyroNextMs = null;
         if (this.gyroSensor) {
             this.gyroSensor.stop();
             this.gyroSensor = null;
@@ -222,11 +244,15 @@ export class SensorProcessor {
                     const dy = iw * qy - ix * qz + iy * qw + iz * qx;
                     const dz = iw * qz + ix * qy - iy * qx + iz * qw;
                     const dw = iw * qw - ix * qx - iy * qy - iz * qz;
-                    this.processActions(this.engine.makeOrientation(
+                    const now = Date.now();
+                    if (this.orientationNextMs !== null && now < this.orientationNextMs) return;
+                    const out = this.engine.makeOrientation(
                         targetDeviceId,
                         dx, dy, dz, dw,
-                        Date.now()
-                    ));
+                        now
+                    );
+                    this.orientationNextMs = out.nextSendMs ?? null;
+                    this.processActions(out.outgoings);
                 };
                 s.start();
                 this.orientationSensor = s;
@@ -261,11 +287,15 @@ export class SensorProcessor {
                 const dy = iw * qy - ix * qz + iy * qw + iz * qx;
                 const dz = iw * qz + ix * qy - iy * qx + iz * qw;
                 const dw = iw * qw - ix * qx - iy * qy - iz * qz;
-                this.processActions(this.engine.makeOrientation(
+                const now = Date.now();
+                if (this.orientationNextMs !== null && now < this.orientationNextMs) return;
+                const out = this.engine.makeOrientation(
                     targetDeviceId,
                     dx, dy, dz, dw,
-                    Date.now()
-                ));
+                    now
+                );
+                this.orientationNextMs = out.nextSendMs ?? null;
+                this.processActions(out.outgoings);
             };
             window.addEventListener('deviceorientation', handler);
             this.orientationDeviceHandler = handler;
@@ -276,16 +306,21 @@ export class SensorProcessor {
         this.orientationTimer = setInterval(() => {
             if (this.orientationEnabled && this.lastAccelEvent) {
                 const q = this.computeQuaternion(this.lastAccelEvent.x, this.lastAccelEvent.y, this.lastAccelEvent.z);
-                this.processActions(this.engine.makeOrientation(
+                const now = Date.now();
+                if (this.orientationNextMs !== null && now < this.orientationNextMs) return;
+                const out = this.engine.makeOrientation(
                     targetDeviceId,
                     q[0], q[1], q[2], q[3],
-                    Date.now()
-                ));
+                    now
+                );
+                this.orientationNextMs = out.nextSendMs ?? null;
+                this.processActions(out.outgoings);
             }
         }, this.orientationIntervalMs);
     }
 
     stopOrientation() {
+        this.orientationNextMs = null;
         if (this.orientationSensor) {
             this.orientationSensor.stop();
             this.orientationSensor = null;
