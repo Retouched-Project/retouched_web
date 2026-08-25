@@ -15,22 +15,17 @@ export class SensorProcessor {
 
     private accelSensor: Sensor | null = null;
     private accelDeviceMotionHandler: ((e: DeviceMotionEvent) => void) | null = null;
-    private lastAccelSentAt = 0;
     private lastAccelEvent: { x: number, y: number, z: number } | null = null;
-    private accelIntervalMs = 100;
     private accelGotReading = false;
 
     private gyroSensor: Sensor | null = null;
     private gyroDeviceMotionHandler: ((e: DeviceMotionEvent) => void) | null = null;
-    private lastGyroSentAt = 0;
-    private gyroIntervalMs = 100;
     private gyroGotReading = false;
 
     private orientationEnabled = false;
     private orientationSensor: Sensor | null = null;
     private orientationDeviceHandler: ((e: DeviceOrientationEvent) => void) | null = null;
     private orientationTimer: ReturnType<typeof setInterval> | null = null;
-    private lastOrientationSentAt = 0;
     private orientationIntervalMs = 100;
 
     private static permissionGranted: boolean | null = null;
@@ -65,15 +60,6 @@ export class SensorProcessor {
         }
     }
 
-    private gridAlign(now: number, last: number, interval: number): number {
-        if (interval <= 0) return now;
-        const nextAt = last + interval;
-        if (now >= nextAt) {
-            return Math.floor((now - nextAt) / interval) * interval + nextAt;
-        }
-        return -1;
-    }
-
     startAccel(targetDeviceId: string) {
         if (this.accelSensor || this.accelDeviceMotionHandler) return;
         this.accelGotReading = false;
@@ -89,14 +75,12 @@ export class SensorProcessor {
                 s.onreading = () => {
                     this.accelGotReading = true;
                     this.lastAccelEvent = { x: s.x ?? 0, y: s.y ?? 0, z: s.z ?? 0 };
-                    const aligned = this.gridAlign(Date.now(), this.lastAccelSentAt, this.accelIntervalMs);
-                    if (aligned < 0) return;
-                    this.lastAccelSentAt = aligned;
                     this.processActions(this.engine.makeAccel(
                         targetDeviceId,
                         (s.x ?? 0) / -9.80665,
                         (s.y ?? 0) / -9.80665,
-                        (s.z ?? 0) / -9.80665
+                        (s.z ?? 0) / -9.80665,
+                        Date.now()
                     ));
                 };
                 s.start();
@@ -115,14 +99,12 @@ export class SensorProcessor {
                 if (!a) return;
                 this.accelGotReading = true;
                 this.lastAccelEvent = { x: a.x ?? 0, y: a.y ?? 0, z: a.z ?? 0 };
-                const aligned = this.gridAlign(Date.now(), this.lastAccelSentAt, this.accelIntervalMs);
-                if (aligned < 0) return;
-                this.lastAccelSentAt = aligned;
                 this.processActions(this.engine.makeAccel(
                     targetDeviceId,
                     (a.x ?? 0) / -9.80665,
                     (a.y ?? 0) / -9.80665,
-                    (a.z ?? 0) / -9.80665
+                    (a.z ?? 0) / -9.80665,
+                    Date.now()
                 ));
             };
             window.addEventListener('devicemotion', this.accelDeviceMotionHandler);
@@ -167,14 +149,12 @@ export class SensorProcessor {
                 const s = new Gyroscope({ frequency: 60 });
                 s.onreading = () => {
                     this.gyroGotReading = true;
-                    const aligned = this.gridAlign(Date.now(), this.lastGyroSentAt, this.gyroIntervalMs);
-                    if (aligned < 0) return;
-                    this.lastGyroSentAt = aligned;
                     this.processActions(this.engine.makeGyro(
                         targetDeviceId,
                         s.x ?? 0,
                         s.y ?? 0,
-                        s.z ?? 0
+                        s.z ?? 0,
+                        Date.now()
                     ));
                 };
                 s.start();
@@ -192,15 +172,13 @@ export class SensorProcessor {
                 const r = e.rotationRate;
                 if (!r) return;
                 this.gyroGotReading = true;
-                const aligned = this.gridAlign(Date.now(), this.lastGyroSentAt, this.gyroIntervalMs);
-                if (aligned < 0) return;
-                this.lastGyroSentAt = aligned;
                 const d2r = Math.PI / 180;
                 this.processActions(this.engine.makeGyro(
                     targetDeviceId,
                     (r.alpha ?? 0) * d2r,
                     (r.beta ?? 0) * d2r,
-                    (r.gamma ?? 0) * d2r
+                    (r.gamma ?? 0) * d2r,
+                    Date.now()
                 ));
             };
             window.addEventListener('devicemotion', this.gyroDeviceMotionHandler);
@@ -244,12 +222,10 @@ export class SensorProcessor {
                     const dy = iw * qy - ix * qz + iy * qw + iz * qx;
                     const dz = iw * qz + ix * qy - iy * qx + iz * qw;
                     const dw = iw * qw - ix * qx - iy * qy - iz * qz;
-                    const aligned = this.gridAlign(Date.now(), this.lastOrientationSentAt, this.orientationIntervalMs);
-                    if (aligned < 0) return;
-                    this.lastOrientationSentAt = aligned;
                     this.processActions(this.engine.makeOrientation(
                         targetDeviceId,
-                        dx, dy, dz, dw
+                        dx, dy, dz, dw,
+                        Date.now()
                     ));
                 };
                 s.start();
@@ -285,12 +261,10 @@ export class SensorProcessor {
                 const dy = iw * qy - ix * qz + iy * qw + iz * qx;
                 const dz = iw * qz + ix * qy - iy * qx + iz * qw;
                 const dw = iw * qw - ix * qx - iy * qy - iz * qz;
-                const aligned = this.gridAlign(Date.now(), this.lastOrientationSentAt, this.orientationIntervalMs);
-                if (aligned < 0) return;
-                this.lastOrientationSentAt = aligned;
                 this.processActions(this.engine.makeOrientation(
                     targetDeviceId,
-                    dx, dy, dz, dw
+                    dx, dy, dz, dw,
+                    Date.now()
                 ));
             };
             window.addEventListener('deviceorientation', handler);
@@ -304,7 +278,8 @@ export class SensorProcessor {
                 const q = this.computeQuaternion(this.lastAccelEvent.x, this.lastAccelEvent.y, this.lastAccelEvent.z);
                 this.processActions(this.engine.makeOrientation(
                     targetDeviceId,
-                    q[0], q[1], q[2], q[3]
+                    q[0], q[1], q[2], q[3],
+                    Date.now()
                 ));
             }
         }, this.orientationIntervalMs);
@@ -323,7 +298,6 @@ export class SensorProcessor {
             clearInterval(this.orientationTimer);
             this.orientationTimer = null;
         }
-        this.lastOrientationSentAt = 0;
     }
 
     // This Euler guy was a genius. This fallback will be worse though if a device needs it.
@@ -336,25 +310,7 @@ export class SensorProcessor {
         return [sr * cp, cr * sp, sr * sp, cr * cp]; // Simplified for yaw=0
     }
 
-    configure(config: { accelIntervalMs?: number | null, gyroIntervalMs?: number | null, orientationEnabled?: boolean | null, orientationIntervalMs?: number | null }, targetDeviceId: string) {
-        if (config.accelIntervalMs != null && config.accelIntervalMs !== this.accelIntervalMs) {
-            const wasRunning = this.accelSensor || this.accelDeviceMotionHandler;
-            this.accelIntervalMs = config.accelIntervalMs;
-            if (wasRunning) {
-                this.stopAccel();
-                this.startAccel(targetDeviceId);
-            }
-        }
-
-        if (config.gyroIntervalMs != null && config.gyroIntervalMs !== this.gyroIntervalMs) {
-            const wasRunning = this.gyroSensor || this.gyroDeviceMotionHandler;
-            this.gyroIntervalMs = config.gyroIntervalMs;
-            if (wasRunning) {
-                this.stopGyro();
-                this.startGyro(targetDeviceId);
-            }
-        }
-
+    configure(config: { orientationEnabled?: boolean | null, orientationIntervalMs?: number | null }, targetDeviceId: string) {
         if (config.orientationEnabled != null) {
             this.orientationEnabled = config.orientationEnabled;
             if (config.orientationEnabled) {
@@ -380,12 +336,7 @@ export class SensorProcessor {
         this.stopAccel();
         this.stopGyro();
         this.stopOrientation();
-        this.accelIntervalMs = 100;
-        this.gyroIntervalMs = 100;
         this.orientationIntervalMs = 100;
         this.orientationEnabled = false;
-        this.lastAccelSentAt = 0;
-        this.lastGyroSentAt = 0;
-        this.lastOrientationSentAt = 0;
     }
 }

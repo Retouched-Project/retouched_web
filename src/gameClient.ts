@@ -392,8 +392,6 @@ export class GameClient {
         });
 
         this.sensors.configure({
-            accelIntervalMs: cfg.accelIntervalMs,
-            gyroIntervalMs: cfg.gyroIntervalMs,
             orientationEnabled: cfg.orientationEnabled,
             orientationIntervalMs: cfg.orientationIntervalMs
         }, activeGame.device.deviceId);

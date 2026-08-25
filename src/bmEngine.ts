@@ -112,8 +112,13 @@ export class BmEngine {
 
     /// Throws when the command itself was wrong. A send to a peer that has
     /// since left is not an error and comes back with nothing to send.
-    emit(command: unknown): BmProcessOutput {
-        return this.engine.emit(command) as BmProcessOutput;
+    /// `nowMs` is a reading of any monotonic clock. Passing one lets the engine
+    /// hold a paced command back until its turn; passing none never holds
+    /// anything back.
+    emit(command: unknown, nowMs?: number): BmProcessOutput {
+        // The clock crosses as a 64 bit integer, which is a bigint on this side.
+        const now = nowMs === undefined ? undefined : BigInt(Math.floor(nowMs));
+        return this.engine.emit(command, now) as BmProcessOutput;
     }
 
     registerButtonHandlers(handlers: string[]) {
@@ -156,16 +161,18 @@ export class BmEngine {
         }).outgoings;
     }
 
-    makeAccel(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
-        return this.emit({ type: 'SendAccel', target: targetId, x, y, z }).outgoings;
+    /// Sensor sends are paced by the engine at the interval the game asked for,
+    /// so a reading offered before its turn comes back as nothing to send.
+    makeAccel(targetId: string, x: number, y: number, z: number, nowMs: number): BmOutgoing[] {
+        return this.emit({ type: 'SendAccel', target: targetId, x, y, z }, nowMs).outgoings;
     }
 
-    makeGyro(targetId: string, x: number, y: number, z: number): BmOutgoing[] {
-        return this.emit({ type: 'SendGyro', target: targetId, x, y, z }).outgoings;
+    makeGyro(targetId: string, x: number, y: number, z: number, nowMs: number): BmOutgoing[] {
+        return this.emit({ type: 'SendGyro', target: targetId, x, y, z }, nowMs).outgoings;
     }
 
-    makeOrientation(targetId: string, x: number, y: number, z: number, w: number): BmOutgoing[] {
-        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w }).outgoings;
+    makeOrientation(targetId: string, x: number, y: number, z: number, w: number, nowMs: number): BmOutgoing[] {
+        return this.emit({ type: 'SendOrientation', target: targetId, x, y, z, w }, nowMs).outgoings;
     }
 
     makeButtonInvoke(targetId: string, handler: string, pressed: boolean): BmOutgoing[] {
