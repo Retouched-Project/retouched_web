@@ -52,6 +52,22 @@ export interface BmOutgoing {
     payload: Uint8Array;
 }
 
+/// Stationary is absent on purpose: the engine reaches it once a set has gone,
+/// and a caller never observes it.
+export type BmTouchPhase = 'Began' | 'Moved' | 'Ended' | 'Cancelled';
+
+export type BmTouchEvent =
+    | {
+        type: 'Pointer';
+        id: number;
+        x: number;
+        y: number;
+        phase: BmTouchPhase;
+        screenWidth: number;
+        screenHeight: number;
+    }
+    | { type: 'CancelAll' };
+
 export type ControlMode = 'Gamepad' | 'Keyboard' | 'Navigation' | 'Wait';
 
 export interface BmControlConfig {

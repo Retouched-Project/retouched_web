@@ -2,7 +2,7 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import init, { BmEngineWasm, EndpointMode, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
-import type { BmArrival, BmOutgoing, BmProcessOutput, BmRegistryInfo, ControlMode } from './types';
+import type { BmArrival, BmOutgoing, BmProcessOutput, BmRegistryInfo, BmTouchEvent, ControlMode } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
 const log = createLogger('BmEngine');
@@ -203,6 +203,15 @@ export class BmEngine {
         return this.emit({ type: 'ControlSchemeParsed', target: targetId }).outgoings;
     }
 
+    /// Reports what fingers did. The engine keeps the set they add up to and
+    /// sends it at the game's cadence, so a batch offered before its turn comes
+    /// back with nothing to send and `nextSendMs` naming the moment to retry.
+    makeTouchEvents(targetId: string, events: BmTouchEvent[], nowMs: number): BmProcessOutput {
+        return this.emit({ type: 'TouchEvent', target: targetId, events }, nowMs);
+    }
+
+    /// Sends a set the caller assembled itself, unbatched. For input that does
+    /// not arrive as a pointer stream.
     makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>): BmOutgoing[] {
         return this.emit({ type: 'SendTouch', target: targetId, touches: points }).outgoings;
     }
