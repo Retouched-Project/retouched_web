@@ -51,6 +51,7 @@ export class GameClient {
     private session: GameSession;
     private engineTimer: ReturnType<typeof setTimeout> | null = null;
     private engineTimerDueAt: number | null = null;
+    private engineDueAt: number | null = null;
 
     // Held until the engine says it would take them. Appending is all this
     // does: what the events mean is the engine's to work out.
@@ -83,6 +84,7 @@ export class GameClient {
         this.session = new GameSession(this.engine, this.identity, (p) => this.handleDelegateUpdate(p));
         this.protocol = new ProtocolCoordinator(this.engine, this.transport, {
             onEvent: (ev) => this.handleEvent(ev),
+            onDeadline: (at) => this.armEngineTimer(at),
         });
         this.schemes = new SchemeService();
         this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.sendOutgoings(a));
@@ -374,7 +376,7 @@ export class GameClient {
         if (this.touchSendDueAt === null || now >= this.touchSendDueAt) {
             this.shipTouches(now);
         } else {
-            this.armEngineTimer(this.touchSendDueAt);
+            this.rearmEngineTimer();
         }
     }
 
@@ -394,14 +396,26 @@ export class GameClient {
     /// set that repeats while a finger is down. Rearming for a moment already
     /// pending is skipped, so a stream of input does not rebuild the timer on
     /// every event.
-    private armEngineTimer(dueAt: number | null | undefined) {
-        if (dueAt == null) {
+    private armEngineTimer(engineDueAt: number | null | undefined) {
+        this.engineDueAt = engineDueAt ?? null;
+        this.rearmEngineTimer();
+    }
+
+    /// Wakes for whichever comes first: what the engine owes, or a batch of
+    /// touches waiting to be handed over. They are separate deadlines and the
+    /// engine only knows about its own.
+    private rearmEngineTimer() {
+        const queueDueAt = this.touchQueue.length === 0 ? null : this.touchSendDueAt;
+        const owed = [this.engineDueAt, queueDueAt].filter((v): v is number => v !== null);
+        const dueAt = owed.length === 0 ? null : Math.min(...owed);
+
+        if (dueAt === null) {
             this.stopEngineTimer();
             return;
         }
         if (this.engineTimer !== null && this.engineTimerDueAt === dueAt) return;
 
-        this.stopEngineTimer();
+        if (this.engineTimer !== null) clearTimeout(this.engineTimer);
         this.engineTimerDueAt = dueAt;
         this.engineTimer = setTimeout(() => {
             this.engineTimer = null;
@@ -421,6 +435,10 @@ export class GameClient {
         if (this.engineTimer !== null) clearTimeout(this.engineTimer);
         this.engineTimer = null;
         this.engineTimerDueAt = null;
+        this.engineDueAt = null;
+    }
+
+    private forgetQueuedTouches() {
         this.touchQueue = [];
         this.touchSendDueAt = null;
     }
@@ -432,6 +450,7 @@ export class GameClient {
         );
         assetManager.dispose();
         this.stopEngineTimer();
+        this.forgetQueuedTouches();
         this.sensors.reset();
         this.schemes.reset();
         this.updateState({ activeGame: null, scheme: null, progress: 0 });
@@ -487,7 +506,7 @@ export class GameClient {
     private handleChunkComplete(ev: BmEvent & { type: 'ChunkComplete' }) {
         const { scheme, initial } = this.schemes.offer(ev.setId, ev.blob);
         if (!scheme) return;
-        this.engine.declareTouch(isTouchEnabled(scheme));
+        this.engine.declareTouch(isTouchEnabled(scheme), Date.now());
         this.updateState({ scheme, progress: 1.0 });
         if (initial) {
             const activeGame = this.session.getActiveGame();

@@ -203,8 +203,8 @@ export class BmEngine {
         return this.emit({ type: 'ControlSchemeParsed', target: targetId }).outgoings;
     }
 
-    declareTouch(enabled: boolean): void {
-        this.emit({ type: 'DeclareTouch', enabled });
+    declareTouch(enabled: boolean, nowMs: number): void {
+        this.emit({ type: 'DeclareTouch', enabled }, nowMs);
     }
 
     /// Reports what fingers did. The engine keeps the set they add up to and

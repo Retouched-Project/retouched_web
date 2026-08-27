@@ -11,6 +11,7 @@ const log = createLogger('ProtocolCoordinator');
 
 export interface ProtocolHandlers {
     onEvent: (event: BmEvent) => void;
+    onDeadline: (at: number | null) => void;
 }
 
 export class ProtocolCoordinator {
@@ -107,9 +108,11 @@ export class ProtocolCoordinator {
     processFrame(data: Uint8Array) {
         try {
             // A data channel carries no address, so there is nothing to report
-            // about where this came from.
-            const out = this.engine.processIncoming(data);
+            // about where this came from. The clock is worth reporting either
+            // way, since anything the engine decides by it can arrive here.
+            const out = this.engine.processIncoming(data, { nowMs: Date.now() });
             this.sendOutgoings(out.outgoings);
+            this.handlers.onDeadline(out.nextTimeMs ?? null);
             for (const event of out.events) {
                 this.handlers.onEvent(event);
             }
