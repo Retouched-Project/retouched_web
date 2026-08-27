@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import type { BmEvent, BmControlConfig, BmRegistryInfo, BmTouchPhase, ControlMode } from './types';
+import type { BmEvent, BmControlConfig, BmRegistryInfo, BmTouchEvent, BmTouchPhase, ControlMode } from './types';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { isAccelerometerEnabled, isTouchEnabled } from './bmrender/proto/schemeExtensions';
 import { assetManager } from './bmrender/assetManager';
@@ -51,6 +51,11 @@ export class GameClient {
     private session: GameSession;
     private engineTimer: ReturnType<typeof setTimeout> | null = null;
     private engineTimerDueAt: number | null = null;
+
+    // Held until the engine says it would take them. Appending is all this
+    // does: what the events mean is the engine's to work out.
+    private touchQueue: BmTouchEvent[] = [];
+    private touchSendDueAt: number | null = null;
     private sensors: SensorProcessor;
     private protocol: ProtocolCoordinator;
     private schemes: SchemeService;
@@ -357,15 +362,30 @@ export class GameClient {
     }
 
     handleTouchEvent(touch: { id: number, x: number, y: number, state: number }, screenWidth: number, screenHeight: number) {
-        const activeGame = this.session.getActiveGame();
         const phase = TOUCH_PHASES[touch.state];
-        if (!activeGame || !phase) return;
+        if (!this.session.getActiveGame() || !phase) return;
 
-        const out = this.engine.makeTouchEvents(
-            activeGame.device.deviceId,
-            [{ type: 'Pointer', id: touch.id, x: touch.x, y: touch.y, phase, screenWidth, screenHeight }],
-            Date.now()
-        );
+        this.touchQueue.push({ type: 'Pointer', id: touch.id, x: touch.x, y: touch.y, phase, screenWidth, screenHeight });
+
+        // Offering these before the engine would take them only to be told no
+        // costs a crossing per finger per frame, so they wait for the moment it
+        // named. What they add up to is worked out there, not here.
+        const now = Date.now();
+        if (this.touchSendDueAt === null || now >= this.touchSendDueAt) {
+            this.shipTouches(now);
+        } else {
+            this.armEngineTimer(this.touchSendDueAt);
+        }
+    }
+
+    private shipTouches(nowMs: number) {
+        const activeGame = this.session.getActiveGame();
+        if (!activeGame || this.touchQueue.length === 0) return;
+
+        const events = this.touchQueue;
+        this.touchQueue = [];
+        const out = this.engine.makeTouchEvents(activeGame.device.deviceId, events, nowMs);
+        this.touchSendDueAt = out.nextSendMs ?? null;
         this.protocol.sendOutgoings(out.outgoings);
         this.armEngineTimer(out.nextTimeMs);
     }
@@ -386,7 +406,12 @@ export class GameClient {
         this.engineTimer = setTimeout(() => {
             this.engineTimer = null;
             this.engineTimerDueAt = null;
-            const out = this.engine.handleTime(Date.now());
+            const now = Date.now();
+            if (this.touchQueue.length > 0) {
+                this.shipTouches(now);
+                return;
+            }
+            const out = this.engine.handleTime(now);
             this.protocol.sendOutgoings(out.outgoings);
             this.armEngineTimer(out.nextTimeMs);
         }, Math.max(0, dueAt - Date.now()));
@@ -396,6 +421,8 @@ export class GameClient {
         if (this.engineTimer !== null) clearTimeout(this.engineTimer);
         this.engineTimer = null;
         this.engineTimerDueAt = null;
+        this.touchQueue = [];
+        this.touchSendDueAt = null;
     }
 
     disconnectGame() {
