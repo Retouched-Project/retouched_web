@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import type { BmEvent, BmControlConfig, BmRegistryInfo, ControlMode } from './types';
+import type { BmEvent, BmControlConfig, BmRegistryInfo, BmTouchPhase, ControlMode } from './types';
 import { ControlScheme } from './bmrender/proto/scheme';
-import { isAccelerometerEnabled } from './bmrender/proto/schemeExtensions';
+import { isAccelerometerEnabled, isTouchEnabled } from './bmrender/proto/schemeExtensions';
 import { assetManager } from './bmrender/assetManager';
 import { bmEngine, type BmEngine } from './bmEngine';
 import { WebRtcTransport } from './core/webRtcTransport';
@@ -11,7 +11,6 @@ import { DeviceInfo } from './core/deviceInfo';
 import { VibrationService } from './utils/vibrationService';
 import { RegistryClient } from './core/registryClient';
 import { GameSession } from './core/gameSession';
-import { TouchProcessor } from './core/touchProcessor';
 import { SensorProcessor, type SensorStatus } from './core/sensorProcessor';
 import { ProtocolCoordinator } from './core/engine/protocolCoordinator';
 import { SchemeService } from './core/engine/schemeService';
@@ -19,6 +18,15 @@ import { EndpointMode } from './wasm/bronze_monkey';
 import { createLogger } from './utils/logger';
 
 const log = createLogger('GameClient');
+
+/// Stationary has no entry: the engine reaches it once a set has gone, and the
+/// renderer never reports it.
+const TOUCH_PHASES: Record<number, BmTouchPhase | undefined> = {
+    1: 'Began',
+    2: 'Moved',
+    4: 'Ended',
+    5: 'Cancelled',
+};
 
 export interface GameClientState {
     connected: boolean;
@@ -41,7 +49,8 @@ export class GameClient {
 
     private registry: RegistryClient;
     private session: GameSession;
-    private touch: TouchProcessor;
+    private engineTimer: ReturnType<typeof setTimeout> | null = null;
+    private engineTimerDueAt: number | null = null;
     private sensors: SensorProcessor;
     private protocol: ProtocolCoordinator;
     private schemes: SchemeService;
@@ -59,7 +68,6 @@ export class GameClient {
 
     private capabilitiesOverride: number | null = null;
     private cachedCapabilities: number | null = null;
-    private touchEnabled: boolean | null = null;
 
     constructor(signalingUrl: string = '/offer') {
         this.transport = new WebRtcTransport(signalingUrl);
@@ -72,7 +80,6 @@ export class GameClient {
             onEvent: (ev) => this.handleEvent(ev),
         });
         this.schemes = new SchemeService();
-        this.touch = new TouchProcessor(this.engine, (a) => this.protocol.sendOutgoings(a));
         this.sensors = new SensorProcessor(this.engine, (a) => this.protocol.sendOutgoings(a));
         this.sensors.onStatusChange = (status) => this.updateState({ sensorStatus: status });
 
@@ -349,11 +356,46 @@ export class GameClient {
         this.session.sendMenuEvent(event, (actions) => this.protocol.sendOutgoings(actions));
     }
 
-    handleTouchSet(touches: Array<{ id: number, x: number, y: number, state: number }>, screenWidth: number, screenHeight: number) {
+    handleTouchEvent(touch: { id: number, x: number, y: number, state: number }, screenWidth: number, screenHeight: number) {
         const activeGame = this.session.getActiveGame();
-        if (activeGame) {
-            this.touch.handleTouchSet(touches, screenWidth, screenHeight, activeGame.device.deviceId);
+        const phase = TOUCH_PHASES[touch.state];
+        if (!activeGame || !phase) return;
+
+        const out = this.engine.makeTouchEvents(
+            activeGame.device.deviceId,
+            [{ type: 'Pointer', id: touch.id, x: touch.x, y: touch.y, phase, screenWidth, screenHeight }],
+            Date.now()
+        );
+        this.protocol.sendOutgoings(out.outgoings);
+        this.armEngineTimer(out.nextTimeMs);
+    }
+
+    /// Wakes the engine when it said it had something owed, currently a touch
+    /// set that repeats while a finger is down. Rearming for a moment already
+    /// pending is skipped, so a stream of input does not rebuild the timer on
+    /// every event.
+    private armEngineTimer(dueAt: number | null | undefined) {
+        if (dueAt == null) {
+            this.stopEngineTimer();
+            return;
         }
+        if (this.engineTimer !== null && this.engineTimerDueAt === dueAt) return;
+
+        this.stopEngineTimer();
+        this.engineTimerDueAt = dueAt;
+        this.engineTimer = setTimeout(() => {
+            this.engineTimer = null;
+            this.engineTimerDueAt = null;
+            const out = this.engine.handleTime(Date.now());
+            this.protocol.sendOutgoings(out.outgoings);
+            this.armEngineTimer(out.nextTimeMs);
+        }, Math.max(0, dueAt - Date.now()));
+    }
+
+    private stopEngineTimer() {
+        if (this.engineTimer !== null) clearTimeout(this.engineTimer);
+        this.engineTimer = null;
+        this.engineTimerDueAt = null;
     }
 
     disconnectGame() {
@@ -362,10 +404,9 @@ export class GameClient {
             (payload) => this.transport.send('game', payload)
         );
         assetManager.dispose();
-        this.touch.reset();
+        this.stopEngineTimer();
         this.sensors.reset();
         this.schemes.reset();
-        this.touchEnabled = null;
         this.updateState({ activeGame: null, scheme: null, progress: 0 });
     }
 
@@ -386,18 +427,12 @@ export class GameClient {
             this.updateState({ controlMode: cfg.controlMode, startString: cfg.startString ?? '' });
         }
 
-        this.touch.configure({
-            touchEnabled: cfg.touchEnabled,
-            touchIntervalMs: cfg.touchIntervalMs
-        });
-
         this.sensors.configure({
             orientationEnabled: cfg.orientationEnabled,
             orientationIntervalMs: cfg.orientationIntervalMs
         }, activeGame.device.deviceId);
 
         if (cfg.touchEnabled != null) {
-            this.touchEnabled = cfg.touchEnabled;
             if (this.state.scheme) {
                 this.updateState({ scheme: ControlScheme.create({ ...this.state.scheme, touchEnabled: cfg.touchEnabled }) });
             }
@@ -425,8 +460,7 @@ export class GameClient {
     private handleChunkComplete(ev: BmEvent & { type: 'ChunkComplete' }) {
         const { scheme, initial } = this.schemes.offer(ev.setId, ev.blob);
         if (!scheme) return;
-        // Re-apply the runtime touch-enable state
-        if (this.touchEnabled != null) scheme.touchEnabled = this.touchEnabled;
+        this.engine.declareTouch(isTouchEnabled(scheme));
         this.updateState({ scheme, progress: 1.0 });
         if (initial) {
             const activeGame = this.session.getActiveGame();

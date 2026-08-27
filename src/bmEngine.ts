@@ -203,6 +203,10 @@ export class BmEngine {
         return this.emit({ type: 'ControlSchemeParsed', target: targetId }).outgoings;
     }
 
+    declareTouch(enabled: boolean): void {
+        this.emit({ type: 'DeclareTouch', enabled });
+    }
+
     /// Reports what fingers did. The engine keeps the set they add up to and
     /// sends it at the game's cadence, so a batch offered before its turn comes
     /// back with nothing to send and `nextSendMs` naming the moment to retry.

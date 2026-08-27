@@ -198,7 +198,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
         client.sendDpad(nx, ny);
     }, [client]);
 
-    const handleTouchSet = useCallback((touches: Array<{ id: number, x: number, y: number, state: number }>) => {
+    const handleTouchEvent = useCallback((touch: { id: number, x: number, y: number, state: number }) => {
         if (!effectiveScheme) return;
 
         let w = effectiveScheme.width ?? 0;
@@ -214,7 +214,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
             const temp = w; w = h; h = temp;
         }
 
-        client.handleTouchSet(touches, w, h);
+        client.handleTouchEvent(touch, w, h);
     }, [client, effectiveScheme]);
 
     if (!effectiveScheme || !loaded || designW <= 0 || designH <= 0) {
@@ -264,7 +264,7 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
                 preserveDpadDragEnabled={preserveDpadDragEnabled}
                 forceRotate={forceRotate}
                 widescreenStretched={widescreenStretched}
-                onTouchSet={handleTouchSet}
+                onTouchEvent={handleTouchEvent}
             />
         </div>
     );

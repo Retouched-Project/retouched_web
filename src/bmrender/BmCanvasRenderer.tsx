@@ -25,11 +25,10 @@ interface HitTarget {
 
 export const BmCanvasRenderer: React.FC<RendererProps> = ({
     scheme, width, height, onButtonPress, onDpadUpdate,
-    baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, widescreenStretched, onTouchSet,
+    baseW, baseH, floatingDpadEnabled, preserveDpadDragEnabled, forceRotate, widescreenStretched, onTouchEvent,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const pointerPositions = useRef<Map<number, { x: number; y: number }>>(new Map());
-    const pointerStates = useRef<Map<number, { id: number; x: number; y: number; state: number }>>(new Map());
     const currentlyPressedRef = useRef<Set<string>>(new Set());
     const currentlyPressedObjsRef = useRef<Set<DisplayObject>>(new Set());
     const hitTargetsRef = useRef<HitTarget[]>([]);
@@ -45,12 +44,12 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
     const onButtonPressRef = useRef(onButtonPress);
     const onDpadUpdateRef = useRef(onDpadUpdate);
     const floatingDpadRef = useRef(floatingDpadEnabled);
-    const onTouchSetRef = useRef(onTouchSet);
+    const onTouchEventRef = useRef(onTouchEvent);
     useEffect(() => {
         onButtonPressRef.current = onButtonPress;
         onDpadUpdateRef.current = onDpadUpdate;
         floatingDpadRef.current = floatingDpadEnabled;
-        onTouchSetRef.current = onTouchSet;
+        onTouchEventRef.current = onTouchEvent;
     });
 
     useEffect(() => {
@@ -293,25 +292,16 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         };
         recalculateHitsRef.current = recalculateHits;
 
-        const flushTouch = () => {
-            const fn = onTouchSetRef.current;
-            if (!fn) return;
-            const touches = Array.from(pointerStates.current.values());
-            if (touches.length === 0) return;
-            fn(touches);
-            for (const t of touches) {
-                if (t.state === 4 || t.state === 5) pointerStates.current.delete(t.id);
-                else if (t.state === 1 || t.state === 2) pointerStates.current.set(t.id, { ...t, state: 3 });
-            }
+        const emitTouch = (id: number, x: number, y: number, state: number) => {
+            onTouchEventRef.current?.({ id, x, y, state });
         };
 
         const onDown = (e: PointerEvent) => {
             e.preventDefault();
             const local = toDesign(e.clientX, e.clientY);
             pointerPositions.current.set(e.pointerId, local);
-            pointerStates.current.set(e.pointerId, { id: e.pointerId, ...local, state: 1 });
             recalculateHits();
-            flushTouch();
+            emitTouch(e.pointerId, local.x, local.y, 1);
         };
 
         const onMove = (e: PointerEvent) => {
@@ -326,18 +316,24 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
 
             const local = toDesign(e.clientX, e.clientY);
             pointerPositions.current.set(e.pointerId, local);
-            pointerStates.current.set(e.pointerId, { id: e.pointerId, ...local, state: 2 });
             recalculateHits();
-            flushTouch();
+            emitTouch(e.pointerId, local.x, local.y, 2);
         };
 
         const onUp = (e: PointerEvent) => {
             const local = toDesign(e.clientX, e.clientY);
             pointerPositions.current.delete(e.pointerId);
-            pointerStates.current.set(e.pointerId, { id: e.pointerId, ...local, state: 4 });
-
             recalculateHits();
-            flushTouch();
+            emitTouch(e.pointerId, local.x, local.y, 4);
+        };
+
+        // A gesture the browser took away is not a release, and a game that
+        // acts on release must not act on it.
+        const onCancel = (e: PointerEvent) => {
+            const local = toDesign(e.clientX, e.clientY);
+            pointerPositions.current.delete(e.pointerId);
+            recalculateHits();
+            emitTouch(e.pointerId, local.x, local.y, 5);
         };
 
         const noCtx = (e: Event) => e.preventDefault();
@@ -345,7 +341,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
         canvas.addEventListener('pointerdown', onDown, { passive: false });
         canvas.addEventListener('pointermove', onMove, { passive: false });
         canvas.addEventListener('pointerup', onUp);
-        canvas.addEventListener('pointercancel', onUp);
+        canvas.addEventListener('pointercancel', onCancel);
         canvas.addEventListener('contextmenu', noCtx);
         canvas.addEventListener('touchstart', noCtx, { passive: false });
         canvas.addEventListener('touchmove', noCtx, { passive: false });
@@ -354,7 +350,7 @@ export const BmCanvasRenderer: React.FC<RendererProps> = ({
             canvas.removeEventListener('pointerdown', onDown);
             canvas.removeEventListener('pointermove', onMove);
             canvas.removeEventListener('pointerup', onUp);
-            canvas.removeEventListener('pointercancel', onUp);
+            canvas.removeEventListener('pointercancel', onCancel);
             canvas.removeEventListener('contextmenu', noCtx);
             canvas.removeEventListener('touchstart', noCtx);
             canvas.removeEventListener('touchmove', noCtx);
