@@ -39,7 +39,6 @@ export type BmVia =
 /// none of it and sends nothing.
 export interface BmArrival {
     source?: string;
-    sourcePort?: number;
     datagram?: boolean;
     nowMs?: number;
 }
