@@ -20,19 +20,16 @@ export interface ControlScheme {
   resources: AppResource[];
   displayObjects: DisplayObject[];
   options: ContextMenuOption[];
-  /**
-   * Ids of the resources the most recent update carried, which are the only
-   * ones whose bitmap data can have changed. A merged scheme repeats every
-   * resource it has ever seen, so without this a renderer cannot tell which
-   * bitmaps need decoding again. Empty on a scheme that came straight from the
-   * parser; every id on an initial scheme.
-   */
   changedResources: number[];
+  /** "linear" or "nearest", the default each object inherits */
+  sample: string;
 }
 
 export interface AppResource {
   id: number;
   bitmap: Uint8Array;
+  /** carried, not read: always "image" in observed traffic */
+  type: string;
 }
 
 export interface DisplayObject {
@@ -59,6 +56,8 @@ export interface DisplayObject {
   deadzone?: number | undefined;
   radial?: boolean | undefined;
   assets: ControlAsset[];
+  /** carried, not read: an authoring label some endpoints emit */
+  name: string;
 }
 
 export interface ControlAsset {
@@ -85,6 +84,7 @@ function createBaseControlScheme(): ControlScheme {
     displayObjects: [],
     options: [],
     changedResources: [],
+    sample: "",
   };
 }
 
@@ -122,6 +122,9 @@ export const ControlScheme: MessageFns<ControlScheme> = {
       writer.int32(v);
     }
     writer.join();
+    if (message.sample !== "") {
+      writer.uint32(90).string(message.sample);
+    }
     return writer;
   },
 
@@ -222,6 +225,14 @@ export const ControlScheme: MessageFns<ControlScheme> = {
 
           break;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.sample = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -263,6 +274,7 @@ export const ControlScheme: MessageFns<ControlScheme> = {
         : globalThis.Array.isArray(object?.changed_resources)
         ? object.changed_resources.map((e: any) => globalThis.Number(e))
         : [],
+      sample: isSet(object.sample) ? globalThis.String(object.sample) : "",
     };
   },
 
@@ -298,6 +310,9 @@ export const ControlScheme: MessageFns<ControlScheme> = {
     if (message.changedResources?.length) {
       obj.changedResources = message.changedResources.map((e) => Math.round(e));
     }
+    if (message.sample !== "") {
+      obj.sample = message.sample;
+    }
     return obj;
   },
 
@@ -316,12 +331,13 @@ export const ControlScheme: MessageFns<ControlScheme> = {
     message.displayObjects = object.displayObjects?.map((e) => DisplayObject.fromPartial(e)) || [];
     message.options = object.options?.map((e) => ContextMenuOption.fromPartial(e)) || [];
     message.changedResources = object.changedResources?.map((e) => e) || [];
+    message.sample = object.sample ?? "";
     return message;
   },
 };
 
 function createBaseAppResource(): AppResource {
-  return { id: 0, bitmap: new Uint8Array(0) };
+  return { id: 0, bitmap: new Uint8Array(0), type: "" };
 }
 
 export const AppResource: MessageFns<AppResource> = {
@@ -331,6 +347,9 @@ export const AppResource: MessageFns<AppResource> = {
     }
     if (message.bitmap.length !== 0) {
       writer.uint32(18).bytes(message.bitmap);
+    }
+    if (message.type !== "") {
+      writer.uint32(26).string(message.type);
     }
     return writer;
   },
@@ -358,6 +377,14 @@ export const AppResource: MessageFns<AppResource> = {
           message.bitmap = reader.bytes();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.type = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -371,6 +398,7 @@ export const AppResource: MessageFns<AppResource> = {
     return {
       id: isSet(object.id) ? globalThis.Number(object.id) : 0,
       bitmap: isSet(object.bitmap) ? bytesFromBase64(object.bitmap) : new Uint8Array(0),
+      type: isSet(object.type) ? globalThis.String(object.type) : "",
     };
   },
 
@@ -382,6 +410,9 @@ export const AppResource: MessageFns<AppResource> = {
     if (message.bitmap.length !== 0) {
       obj.bitmap = base64FromBytes(message.bitmap);
     }
+    if (message.type !== "") {
+      obj.type = message.type;
+    }
     return obj;
   },
 
@@ -392,6 +423,7 @@ export const AppResource: MessageFns<AppResource> = {
     const message = createBaseAppResource();
     message.id = object.id ?? 0;
     message.bitmap = object.bitmap ?? new Uint8Array(0);
+    message.type = object.type ?? "";
     return message;
   },
 };
@@ -418,6 +450,7 @@ function createBaseDisplayObject(): DisplayObject {
     deadzone: undefined,
     radial: undefined,
     assets: [],
+    name: "",
   };
 }
 
@@ -482,6 +515,9 @@ export const DisplayObject: MessageFns<DisplayObject> = {
     }
     for (const v of message.assets) {
       ControlAsset.encode(v!, writer.uint32(162).fork()).join();
+    }
+    if (message.name !== "") {
+      writer.uint32(170).string(message.name);
     }
     return writer;
   },
@@ -653,6 +689,14 @@ export const DisplayObject: MessageFns<DisplayObject> = {
           message.assets.push(ControlAsset.decode(reader, reader.uint32()));
           continue;
         }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -718,6 +762,7 @@ export const DisplayObject: MessageFns<DisplayObject> = {
       assets: globalThis.Array.isArray(object?.assets)
         ? object.assets.map((e: any) => ControlAsset.fromJSON(e))
         : [],
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
     };
   },
 
@@ -783,6 +828,9 @@ export const DisplayObject: MessageFns<DisplayObject> = {
     if (message.assets?.length) {
       obj.assets = message.assets.map((e) => ControlAsset.toJSON(e));
     }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
     return obj;
   },
 
@@ -811,6 +859,7 @@ export const DisplayObject: MessageFns<DisplayObject> = {
     message.deadzone = object.deadzone ?? undefined;
     message.radial = object.radial ?? undefined;
     message.assets = object.assets?.map((e) => ControlAsset.fromPartial(e)) || [];
+    message.name = object.name ?? "";
     return message;
   },
 };

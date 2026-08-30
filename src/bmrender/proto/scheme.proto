@@ -16,11 +16,13 @@ message ControlScheme {
   repeated DisplayObject display_objects = 8;
   repeated ContextMenuOption options = 9;
   repeated int32 changed_resources = 10;
+  string sample = 11; // "linear" or "nearest", the default each object inherits
 }
 
 message AppResource {
   int32 id = 1;
   bytes bitmap = 2;
+  string type = 3;
 }
 
 message DisplayObject {
@@ -47,6 +49,7 @@ message DisplayObject {
   optional bool radial = 19;
 
   repeated ControlAsset assets = 20;
+  string name = 21;
 }
 
 message ControlAsset {
