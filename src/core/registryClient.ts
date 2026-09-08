@@ -48,7 +48,7 @@ export class RegistryClient {
         try {
             this.engine.initLocalDevice(deviceId, deviceName, typeCode, host, 0, port);
 
-            this.engine.declarePeer('server', 'Registry', 7, host, 0, 8088);
+            this.engine.peerReachable('server', 'Registry', 7, host, 0, 8088);
 
             // The registry speaks first, so there is nothing to send here.
             await this.registerWithRegistry(deviceId, host, port, deviceName, typeCode);

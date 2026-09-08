@@ -86,15 +86,16 @@ export class BmEngine {
         return new FramerWasm(maxLen);
     }
 
-    /// Tells the engine about a peer it could not have learned about on its
-    /// own, at an address known out of band.
-    declarePeer(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {
-        try {
-            this.engine.declare_peer(id, name, typeCode, address, unreliablePort, reliablePort);
-        } catch (e) {
-            log.error("declare_peer WASM panic:", e);
-            throw e;
-        }
+    peerReachable(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number): BmOutgoing[] {
+        return this.emit({
+            type: 'PeerReachable',
+            device: {
+                deviceId: id,
+                deviceName: name,
+                deviceType: typeCode,
+                address: { address, unreliablePort, reliablePort },
+            },
+        }).outgoings;
     }
 
     /// `arrival` is what the transport knows about where the bytes came from.
