@@ -77,6 +77,7 @@ export const GameSessionView: React.FC<Props> = ({
 
     const sliderRef = useRef<UnlockSliderHandle>(null);
     const isLandscapeRef = useRef(false);
+    const lockedRef = useRef(false);
     const viewport = useViewportSize();
 
     useEffect(() => {
@@ -104,7 +105,7 @@ export const GameSessionView: React.FC<Props> = ({
             }
             if (isLandscapeRef.current) {
                 const so = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
-                so?.lock?.('landscape').catch(() => { });
+                so?.lock?.('landscape').then(() => { lockedRef.current = true; }).catch(() => { });
             }
         };
         window.addEventListener('popstate', handlePopState);
@@ -149,9 +150,7 @@ export const GameSessionView: React.FC<Props> = ({
     const isLandscape = schemeLandscape && !whitelisted; // effective orientation
     const navMode = controlMode === 'Navigation';
     const waitMode = controlMode === 'Wait';
-    // NAVIGATION and WAIT modes are portrait, so the overlays and pause slider
-    // ignore the scheme's landscape rotation while either is active.
-    const portraitMode = navMode || waitMode;
+    const portraitMode = navMode || waitMode || controlMode === 'Keyboard';
     const overlayRotate = forceRotate && !portraitMode;
     const sliderLandscape = isLandscape && !portraitMode;
     const sliderRightOffset = sliderLandscape ? 60 : 12;
@@ -159,6 +158,19 @@ export const GameSessionView: React.FC<Props> = ({
     useEffect(() => {
         isLandscapeRef.current = isLandscape;
     }, [isLandscape]);
+
+    useEffect(() => {
+        if (!lockedRef.current) return;
+        const so = screen.orientation as ScreenOrientation & {
+            lock?: (orientation: string) => Promise<void>;
+            unlock?: () => void;
+        };
+        if (controlMode && controlMode !== 'Gamepad') {
+            so?.unlock?.();
+        } else if (isLandscape) {
+            so?.lock?.('landscape').catch(() => { });
+        }
+    }, [controlMode, isLandscape]);
 
     if (!scheme) {
         const percent = Math.round(progress * 100);
@@ -252,7 +264,7 @@ export const GameSessionView: React.FC<Props> = ({
                     position: 'absolute',
                     top: sliderLandscape ? 12 : 56,
                     right: sliderRightOffset,
-                    zIndex: 100,
+                    zIndex: 400,
                     pointerEvents: 'auto',
                 }}>
                     <UnlockSlider ref={sliderRef} onUnlocked={handleUnlocked} rotated={overlayRotate} />
@@ -277,7 +289,7 @@ export const GameSessionView: React.FC<Props> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 200,
+                        zIndex: 500,
                     }}
                     onClick={closePauseMenu}
                 >

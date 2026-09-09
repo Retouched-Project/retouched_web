@@ -390,10 +390,12 @@ function drawText(
     ctx: CanvasRenderingContext2D, obj: DisplayObject,
     x: number, y: number, _w: number, h: number, designH: number,
 ) {
-    const fontSize = (obj.textSize || 0.03) * designH;
+    const fontSize = (obj.textSize ?? 0) * designH;
+    if (fontSize <= 0) return;
     ctx.font = `${fontSize}px sans-serif`;
     ctx.fillStyle = obj.color !== undefined
-        ? '#' + (obj.color & 0xFFFFFF).toString(16).padStart(6, '0')
+        ? `rgba(${(obj.color >>> 16) & 0xFF}, ${(obj.color >>> 8) & 0xFF}, ` +
+        `${obj.color & 0xFF}, ${((obj.color >>> 24) & 0xFF) / 255})`
         : '#ffffff';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
