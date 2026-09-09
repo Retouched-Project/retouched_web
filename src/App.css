@@ -217,3 +217,11 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+.bm-menu-panel {
+  scrollbar-width: none;
+}
+
+.bm-menu-panel::-webkit-scrollbar {
+  display: none;
+}

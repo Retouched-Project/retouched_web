@@ -37,6 +37,8 @@ const MENU_ICONS: Record<number, string> = {
     6: menuMusicOffIcon,
 };
 
+const PANEL_DRAG_SLOP = 8;
+
 interface Props {
     client: GameClient;
     onDisconnect: () => void;
@@ -147,6 +149,33 @@ export const GameSessionView: React.FC<Props> = ({
         client.sendResume();
     }, [client]);
 
+    const rowHandlers = (tint: string, activate: () => void) => {
+        const clear = (
+            e: React.PointerEvent<HTMLButtonElement> | React.FocusEvent<HTMLButtonElement>,
+        ) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+        };
+        return {
+            onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                }
+                e.currentTarget.style.backgroundColor = tint;
+            },
+            onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => {
+                clear(e);
+                if (e.pointerType === 'mouse') return;
+                const dragged = drag.current?.moved ?? false;
+                swallowClick.current = true;
+                if (!dragged) activate();
+            },
+            onPointerCancel: clear,
+            onPointerLeave: clear,
+            onBlur: clear,
+            onClick: activate,
+        };
+    };
+
     const isLandscape = schemeLandscape && !whitelisted; // effective orientation
     const navMode = controlMode === 'Navigation';
     const waitMode = controlMode === 'Wait';
@@ -154,6 +183,79 @@ export const GameSessionView: React.FC<Props> = ({
     const overlayRotate = forceRotate && !portraitMode;
     const sliderLandscape = isLandscape && !portraitMode;
     const sliderRightOffset = sliderLandscape ? 60 : 12;
+
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    const pressedBackdrop = useRef(false);
+    const onBackdrop = (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) =>
+        e.target === e.currentTarget;
+
+    const backdropHandlers = {
+        onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+            pressedBackdrop.current = onBackdrop(e);
+        },
+        onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => {
+            if (e.pointerType === 'mouse') return;
+            if (pressedBackdrop.current && onBackdrop(e)) closePauseMenu();
+        },
+        onPointerCancel: () => {
+            pressedBackdrop.current = false;
+        },
+        onClick: (e: React.MouseEvent<HTMLDivElement>) => {
+            if (pressedBackdrop.current && onBackdrop(e)) closePauseMenu();
+        },
+    };
+
+    const drag = useRef<
+        { id: number; from: number; top: number; moved: boolean; rotated: boolean } | null
+    >(null);
+    const swallowClick = useRef(false);
+
+    const alongPanel = (e: React.PointerEvent<HTMLDivElement>, rotated: boolean) =>
+        rotated ? -e.clientX : e.clientY;
+
+    // stupid butt ugly manual scrolling logic due to faked rotation because
+    // some platforms (*ahem* iOS *ahem*) cannot force screen orientation using
+    // the browser APIs because of fucking course...
+    // because the actual orientation is portrait while the shit rendered on the
+    // screen appears landscape the scrolling and tapping has to be handrolled
+    const panelDragHandlers = {
+        onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+            const el = panelRef.current;
+            if (!el) return;
+            swallowClick.current = false;
+            drag.current = {
+                id: e.pointerId,
+                from: alongPanel(e, overlayRotate),
+                top: el.scrollTop,
+                moved: false,
+                rotated: overlayRotate,
+            };
+        },
+        onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => {
+            const el = panelRef.current;
+            const d = drag.current;
+            if (!el || !d || d.id !== e.pointerId) return;
+            const travelled = alongPanel(e, d.rotated) - d.from;
+            if (!d.moved) {
+                if (Math.abs(travelled) < PANEL_DRAG_SLOP) return;
+                d.moved = true;
+            }
+            el.scrollTop = d.top - travelled;
+        },
+        onPointerUp: () => {
+            drag.current = null;
+        },
+        onPointerCancel: () => {
+            drag.current = null;
+        },
+        onClickCapture: (e: React.MouseEvent<HTMLDivElement>) => {
+            if (!swallowClick.current) return;
+            swallowClick.current = false;
+            e.stopPropagation();
+            e.preventDefault();
+        },
+    };
 
     useEffect(() => {
         isLandscapeRef.current = isLandscape;
@@ -209,7 +311,8 @@ export const GameSessionView: React.FC<Props> = ({
                 backgroundColor: '#000',
                 position: 'relative',
                 overflow: 'hidden',
-                touchAction: 'none'
+                touchAction: 'manipulation',
+                overscrollBehavior: 'none',
             }}
             onContextMenu={(e) => {
                 e.preventDefault();
@@ -291,19 +394,25 @@ export const GameSessionView: React.FC<Props> = ({
                         justifyContent: 'center',
                         zIndex: 500,
                     }}
-                    onClick={closePauseMenu}
+                    {...backdropHandlers}
                 >
                     <div
+                        className="bm-menu-panel"
                         style={{
                             backgroundColor: '#1e1e2e',
                             borderRadius: 12,
                             maxWidth: 320,
                             width: '90%',
-                            overflow: 'hidden',
+                            maxHeight: overlayRotate ? viewport.w : viewport.h,
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            touchAction: 'none',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                             transform: overlayRotate ? 'rotate(90deg)' : undefined,
                         }}
+                        ref={panelRef}
                         onClick={(e) => e.stopPropagation()}
+                        {...panelDragHandlers}
                     >
                         {/* Scheme context menu options */}
                         {options.map((opt, i) => {
@@ -327,13 +436,10 @@ export const GameSessionView: React.FC<Props> = ({
                                         textAlign: 'left',
                                         fontFamily: "'Inter', sans-serif",
                                     }}
-                                    onPointerDown={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
-                                    onPointerUp={(e) => {
-                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                    {...rowHandlers('rgba(255,255,255,0.1)', () => {
                                         sendMenuEvent(opt.event);
                                         if (opt.closeOnSelect) closePauseMenu();
-                                    }}
-                                    onPointerLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    })}
                                 >
                                     <img src={iconUrl} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
                                     <span>{opt.title || 'Menu Item'}</span>
@@ -358,12 +464,7 @@ export const GameSessionView: React.FC<Props> = ({
                                 textAlign: 'left',
                                 fontFamily: "'Inter', sans-serif",
                             }}
-                            onPointerDown={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.15)')}
-                            onPointerUp={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                                handleDisconnect();
-                            }}
-                            onPointerLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            {...rowHandlers('rgba(255,107,107,0.15)', handleDisconnect)}
                         >
                             <img src={menuDisconnectIcon} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
                             <span>Disconnect</span>
@@ -386,7 +487,7 @@ const StatusBanners: React.FC<{
     if (sensorStatus === 'permission_denied' && !dismissed.has('sensor')) {
         banners.push({
             key: 'sensor',
-            text: 'Motion sensor permission denied \u2014 tilt controls disabled',
+            text: 'Motion sensor permission denied: tilt controls disabled',
             color: '#ef4444',
         });
     }
@@ -443,7 +544,7 @@ const StatusBanners: React.FC<{
                             padding: '0 4px',
                             lineHeight: 1,
                         }}
-                    >\u2715</button>
+                    ></button>
                 </div>
             ))}
         </div>
