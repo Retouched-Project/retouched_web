@@ -37,9 +37,14 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
 
     const activeButtonsRef = useRef<Set<string>>(new Set());
 
+    const pendingChangedRef = useRef<Set<number>>(new Set());
+
     useEffect(() => {
         const handler = (state: GameClientState) => {
             if (state.scheme) {
+                for (const id of state.scheme.changedResources ?? []) {
+                    pendingChangedRef.current.add(id);
+                }
                 setScheme(state.scheme);
             }
         };
@@ -55,12 +60,21 @@ export const BmRenderView: React.FC<Props> = ({ client, floatingDpadEnabled, sma
             (scheme.displayObjects || []).forEach(obj => {
                 (obj.assets || []).forEach(a => neededIds.add(a.resourceRef ?? -1));
             });
+
+            const changed = pendingChangedRef.current;
+            pendingChangedRef.current = new Set();
             const resourcesToLoad = (scheme.resources || [])
                 .filter(r => r.id !== undefined && r.bitmap !== undefined && neededIds.has(r.id))
+                .filter(r => changed.has(r.id!) || !assetManager.hasResource(r.id!))
                 .map(r => ({ id: r.id!, bitmap: r.bitmap! }));
 
             if (resourcesToLoad.length > 0) {
-                await assetManager.loadResources(resourcesToLoad);
+                try {
+                    await assetManager.loadResources(resourcesToLoad);
+                } catch (e) {
+                    for (const id of changed) pendingChangedRef.current.add(id);
+                    throw e;
+                }
             }
 
             // A d-pad that ships no assets uses the built-in skin.
