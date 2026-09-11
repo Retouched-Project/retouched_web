@@ -37,6 +37,6 @@ export class DeviceInfo {
         const ua = navigator.userAgent;
         if (/android/i.test(ua)) return 4;
         if (/iphone|ipad|ipod/i.test(ua)) return 2;
-        return 0;
+        return 6; // palm
     }
 }
