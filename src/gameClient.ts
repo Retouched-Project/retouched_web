@@ -177,26 +177,27 @@ export class GameClient {
     }
 
     private handleGameJson(data: Uint8Array): boolean {
-        if (data.length > 0 && data[0] === 0x7B) {
-            try {
-                const text = new TextDecoder().decode(data);
-                const msg = JSON.parse(text);
-                if (msg.type === 'game_closed') {
-                    if (this.protocol.policyHungUp()) {
-                        log.info('Ignoring policy socket drop');
-                        return true;
-                    }
-                    log.info('Game closed by server (TCP connection dropped)');
-                    const gone = this.session.getActiveGame();
-                    if (gone) {
-                        this.protocol.sendOutgoings(this.engine.peerGone(gone.device.deviceId));
-                    }
-                    this.disconnectGame();
-                    return true;
-                }
-            } catch { /* not a game message */ }
+        if (data.length === 0 || data[0] !== 0x7B) return false;
+
+        let msg: { type?: string };
+        try {
+            msg = JSON.parse(new TextDecoder().decode(data));
+        } catch {
+            return false;
         }
-        return false;
+        if (msg?.type !== 'game_closed') return false;
+
+        if (this.protocol.policyHungUp()) {
+            log.info('Ignoring policy socket drop');
+            return true;
+        }
+        log.info('Game closed by server (TCP connection dropped)');
+        const gone = this.session.getActiveGame();
+        if (gone) {
+            this.protocol.sendOutgoings(this.engine.peerGone(gone.device.deviceId));
+        }
+        this.disconnectGame();
+        return true;
     }
 
     async connect() {

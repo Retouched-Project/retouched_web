@@ -47,7 +47,11 @@ export class GameSession {
             MetricsService.send(MetricsService.SESSION_END, this.activeGame.appId ?? '', this.identity.getDeviceId());
 
             const targetId = this.activeGame.device.deviceId;
-            sendAction(this.engine.makeSimpleInvoke(targetId, 'bmPause'));
+            try {
+                sendAction(this.engine.makeSimpleInvoke(targetId, 'bmPause'));
+            } catch (e) {
+                log.warn('Could not tell the game we are leaving:', e);
+            }
 
             try {
                 const msg = JSON.stringify({ type: 'disconnect_game' });
