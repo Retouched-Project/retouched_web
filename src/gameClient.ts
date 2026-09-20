@@ -14,7 +14,6 @@ import { GameSession } from './core/gameSession';
 import { SensorProcessor, type SensorStatus } from './core/sensorProcessor';
 import { ProtocolCoordinator } from './core/engine/protocolCoordinator';
 import { SchemeService } from './core/engine/schemeService';
-import { EndpointMode } from './wasm/bronze_monkey';
 import { createLogger } from './utils/logger';
 
 const log = createLogger('GameClient');
@@ -220,7 +219,7 @@ export class GameClient {
     /// what is known and told again when the probe lands.
     private applySessionInputs(capabilities: number) {
         this.engine.configure({
-            endpoint: EndpointMode.Controller,
+            endpoint: 'Controller',
             gyroscope: (capabilities & 1) !== 0,
             orientation: (capabilities & 2) !== 0,
             screenWidth: window.innerWidth,

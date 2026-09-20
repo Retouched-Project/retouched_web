@@ -10,7 +10,7 @@ export interface BmAddress {
 export interface BmDeviceCore {
     deviceId: string;
     deviceName: string;
-    deviceType: number;
+    deviceType: string;
     address: BmAddress | null;
 }
 

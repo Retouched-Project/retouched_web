@@ -41,23 +41,23 @@ export class RegistryClient {
 
         const deviceId = DeviceInfo.getDeviceId();
         const deviceName = DeviceInfo.getDeviceName();
-        const typeCode = DeviceInfo.getDeviceTypeCode();
+        const deviceType = DeviceInfo.getDeviceType();
 
         log.info(`Initializing local device: ${deviceId} on ${host}:${port}`);
 
         try {
-            this.engine.initLocalDevice(deviceId, deviceName, typeCode, host, 0, port);
+            this.engine.initLocalDevice(deviceId, deviceName, deviceType, host, 0, port);
 
-            this.engine.peerReachable('server', 'Registry', 7, host, 0, 8088);
+            this.engine.peerReachable('server', 'Registry', 'Server', host, 0, 8088);
 
             // The registry speaks first, so there is nothing to send here.
-            await this.registerWithRegistry(deviceId, host, port, deviceName, typeCode);
+            await this.registerWithRegistry(deviceId, host, port, deviceName, deviceType);
         } catch (e) {
             log.error('Local device initialization failed:', e);
         }
     }
 
-    private async registerWithRegistry(deviceId: string, host: string, port: number, deviceName: string, typeCode: number) {
+    private async registerWithRegistry(deviceId: string, host: string, port: number, deviceName: string, deviceType: string) {
         const registerPromise = new Promise<void>((resolve) => {
             this.registerResolve = resolve;
         });
@@ -72,7 +72,7 @@ export class RegistryClient {
             device: {
                 deviceId: deviceId,
                 deviceName: deviceName,
-                deviceType: typeCode,
+                deviceType,
                 address: selfAddress,
             },
             deviceAddress: selfAddress,

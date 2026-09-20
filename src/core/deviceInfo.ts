@@ -10,7 +10,7 @@ export class DeviceInfo {
     getDeviceId(): string { return DeviceInfo.getDeviceId(); }
     getAppId(): string { return DeviceInfo.getAppId(); }
     getDeviceName(): string { return DeviceInfo.getDeviceName(); }
-    getDeviceTypeCode(): number { return DeviceInfo.getDeviceTypeCode(); }
+    getDeviceType(): string { return DeviceInfo.getDeviceType(); }
 
     static getDeviceId(): string {
         if (!this.deviceId) {
@@ -33,10 +33,10 @@ export class DeviceInfo {
         return "Retouched Web";
     }
 
-    static getDeviceTypeCode(): number {
+    static getDeviceType(): string {
         const ua = navigator.userAgent;
-        if (/android/i.test(ua)) return 4;
-        if (/iphone|ipad|ipod/i.test(ua)) return 2;
-        return 6; // palm
+        if (/android/i.test(ua)) return 'Android';
+        if (/iphone|ipad|ipod/i.test(ua)) return 'IPhone';
+        return 'Palm';
     }
 }

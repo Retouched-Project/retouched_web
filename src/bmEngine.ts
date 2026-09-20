@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import init, { BmEngineWasm, EndpointMode, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
+import init, { BmEngineWasm, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
 import type { BmArrival, BmOutgoing, BmProcessOutput, BmRegistryInfo, BmTouchEvent, ControlMode } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
@@ -42,9 +42,9 @@ export class BmEngine {
         return this.wasmEngine;
     }
 
-    initLocalDevice(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number) {
+    initLocalDevice(id: string, name: string, deviceType: string, address: string, unreliablePort: number, reliablePort: number) {
         try {
-            this.engine.init_local_device(id, name, typeCode, address, unreliablePort, reliablePort);
+            this.engine.init_local_device(id, name, deviceType, address, unreliablePort, reliablePort);
         } catch (e) {
             log.error("init_local_device WASM panic:", e);
             throw e;
@@ -58,7 +58,7 @@ export class BmEngine {
     /// game for a scheme to fit it.
     configure(config: {
         server?: boolean;
-        endpoint?: EndpointMode;
+        endpoint?: 'Game' | 'Controller';
         opensSessions?: boolean;
         gyroscope?: boolean;
         orientation?: boolean;
@@ -86,13 +86,13 @@ export class BmEngine {
         return new FramerWasm(maxLen);
     }
 
-    peerReachable(id: string, name: string, typeCode: number, address: string, unreliablePort: number, reliablePort: number): BmOutgoing[] {
+    peerReachable(id: string, name: string, deviceType: string, address: string, unreliablePort: number, reliablePort: number): BmOutgoing[] {
         return this.emit({
             type: 'PeerReachable',
             device: {
                 deviceId: id,
                 deviceName: name,
-                deviceType: typeCode,
+                deviceType,
                 address: { address, unreliablePort, reliablePort },
             },
         }).outgoings;
