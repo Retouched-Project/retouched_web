@@ -24,13 +24,17 @@ export class RegistryClient {
         if (data.length > 0 && data[0] === 123) { // '{'
             try {
                 const text = new TextDecoder().decode(data);
-                if (text.includes('"port_assignment"')) {
-                    const msg = JSON.parse(text);
-                    if (msg.type === 'port_assignment') {
-                        log.info('Received Port Assignment:', msg);
-                        this.handlePortAssignment(msg.port, msg.host);
-                        return true;
-                    }
+                const msg = JSON.parse(text);
+                if (msg.type === 'port_assignment') {
+                    log.info('Received Port Assignment:', msg);
+                    this.onStateUpdate({ registryWaiting: false });
+                    this.handlePortAssignment(msg.port, msg.host);
+                    return true;
+                }
+                if (msg.type === 'registry_unavailable') {
+                    log.info('Bridge is waiting for the registry to start');
+                    this.onStateUpdate({ registryWaiting: true });
+                    return true;
                 }
             } catch { /* not a registry message */ }
         }

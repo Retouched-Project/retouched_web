@@ -19,6 +19,7 @@ interface GamesTabProps {
     gameInfos: BmRegistryInfo[];
     onJoinGame: (game: BmRegistryInfo) => void;
     error?: string;
+    registryWaiting?: boolean;
     gamePort: number;
     needsSensorPermission: boolean;
     sensorPermissionGranted: boolean | null;
@@ -74,6 +75,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
     gameInfos,
     onJoinGame,
     error,
+    registryWaiting,
     gamePort,
     needsSensorPermission,
     sensorPermissionGranted,
@@ -128,6 +130,21 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                     <button onClick={() => window.location.reload()} style={styles.button}>
                         Reconnect
                     </button>
+                </div>
+                {sensorButton}
+            </div>
+        );
+    }
+
+    if (registryWaiting) {
+        return (
+            <div style={styles.tabRoot}>
+                <BackgroundIcons connected={connected} hasGames={hasGames} />
+                <div style={styles.topMessage}>
+                    <div className="spinner" style={styles.spinner}></div>
+                    <p style={{ color: '#aaa', marginTop: 10 }}>
+                        Waiting for the server to start...
+                    </p>
                 </div>
                 {sensorButton}
             </div>

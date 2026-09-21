@@ -60,6 +60,12 @@ export class GameSession {
             } catch (e) {
                 log.warn('Failed to send disconnect_game signal:', e);
             }
+
+            try {
+                sendAction(this.engine.peerGone(targetId));
+            } catch (e) {
+                log.warn('Could not tell the engine we are leaving:', e);
+            }
         }
 
         this.activeGame = null;

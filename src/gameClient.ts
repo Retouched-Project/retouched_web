@@ -37,6 +37,7 @@ export interface GameClientState {
     sensorStatus?: SensorStatus;
     controlMode?: ControlMode | null;
     startString?: string | null;
+    registryWaiting?: boolean;
 }
 
 export type StateCallback = (state: GameClientState) => void;
@@ -139,6 +140,23 @@ export class GameClient {
                 this.updateState({ connected: true });
             }
         };
+        this.transport.onClose = (label) => {
+            if (this.closed) return;
+            if (label === 'game') {
+                if (!this.session.getActiveGame()) return;
+                if (this.protocol.policyHungUp()) {
+                    log.info('Ignoring policy socket drop');
+                    return;
+                }
+                log.info('Game channel closed, the bridge is gone');
+                this.disconnectGame();
+                return;
+            }
+            if (label === 'registry') {
+                log.info('Registry channel closed, the bridge is gone');
+                this.teardownServer();
+            }
+        };
         this.transport.onError = (err) => {
             log.error('Transport error:', err);
         };
@@ -191,10 +209,6 @@ export class GameClient {
             return true;
         }
         log.info('Game closed by server (TCP connection dropped)');
-        const gone = this.session.getActiveGame();
-        if (gone) {
-            this.protocol.sendOutgoings(this.engine.peerGone(gone.device.deviceId));
-        }
         this.disconnectGame();
         return true;
     }
@@ -456,12 +470,21 @@ export class GameClient {
         this.updateState({ activeGame: null, scheme: null, progress: 0 });
     }
 
+    private teardownServer() {
+        try {
+            this.protocol.sendOutgoings(this.engine.peerGone('server'));
+        } catch (e) {
+            log.warn('Could not retract the registry peer:', e);
+        }
+        this.registryHandshakeReceived = false;
+        this.updateState({ connected: false, games: [], registryWaiting: false });
+    }
+
     close() {
         this.closed = true;
         this.disconnectGame();
+        this.teardownServer();
         this.transport.close();
-        this.registryHandshakeReceived = false;
-        this.updateState({ connected: false, activeGame: null, scheme: null, progress: 0, games: [] });
     }
 
     private handleControlConfig(cfg: BmControlConfig) {

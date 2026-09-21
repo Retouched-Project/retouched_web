@@ -33,6 +33,7 @@ function App() {
 
   const [connected, setConnected] = useState(false);
   const [gameInfos, setGameInfos] = useState<BmRegistryInfo[]>([]);
+  const [registryWaiting, setRegistryWaiting] = useState(false);
   const [activeGame, setActiveGame] = useState<BmRegistryInfo | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -89,6 +90,7 @@ function App() {
       setConnected(state.connected);
       setGameInfos(state.games);
       setGamePort(state.port);
+      setRegistryWaiting(state.registryWaiting ?? false);
     });
 
     const savedCapsInit = localStorage.getItem('capabilitiesOverride');
@@ -325,6 +327,7 @@ function App() {
               gameInfos={gameInfos}
               onJoinGame={handleJoinGame}
               error={error}
+              registryWaiting={registryWaiting}
               gamePort={gamePort}
               needsSensorPermission={needsSensorPermission}
               sensorPermissionGranted={sensorPermissionGranted}
