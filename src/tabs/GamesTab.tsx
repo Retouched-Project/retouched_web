@@ -166,7 +166,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
             <div style={styles.listContainer}>
                 {gameInfos.map((game) => (
                     <div
-                        key={game.slotId}
+                        key={game.device.deviceId}
                         style={styles.listItem}
                         onClick={() => {
                             const maxPlayers = game.maxPlayers ?? 0;
@@ -239,16 +239,15 @@ const SlotWifiIcon: React.FC<{ slotId: number; currentPlayers: number; maxPlayer
     );
 };
 
-const getSlotColor = (slotId: number): string => {
-    const colors = [
-        '#666666',
-        '#FF6900', '#FED000', '#FF2C9B', '#FF0066',
-        '#D500FF', '#969C00', '#9B96CE', '#00CD97',
-        '#009B00', '#00C9FF', '#112F68', '#8AFF00',
-        '#D01300', '#76D061', '#7400FF'
-    ];
-    return colors[slotId] || '#666666';
-};
+const SLOT_COLORS = [
+    '#FF6600', '#FFCC00', '#FF3399', '#FF0066',
+    '#CC00FF', '#999900', '#9999CC', '#00CC99',
+    '#009900', '#00CCFF', '#003366', '#99FF00',
+    '#CC0000', '#80CD68', '#6600FF'
+];
+
+const getSlotColor = (slotId: number): string =>
+    SLOT_COLORS[(Math.max(1, slotId) - 1) % SLOT_COLORS.length];
 
 const styles = {
     tabRoot: {
