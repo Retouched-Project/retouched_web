@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import init, { BmEngineWasm, FramerWasm, init_panic_hook, parse_control_scheme_xml } from './wasm/bronze_monkey';
-import type { BmArrival, BmOutgoing, BmProcessOutput, BmRegistryInfo, BmTouchEvent, ControlMode } from './types';
+import init, {
+    BmEngineWasm,
+    FramerWasm,
+    Sensor,
+    init_panic_hook,
+    parse_control_scheme_xml,
+    type ControlMode,
+    type DeviceType,
+    type EndpointMode,
+    type TouchState,
+} from './wasm/bronze_monkey';
+import type { BmArrival, BmOutgoing, BmProcessOutput, BmRegistryInfo, BmTouchEvent } from './types';
 import { configureLibLogging, createLogger } from './utils/logger';
 
 const log = createLogger('BmEngine');
@@ -42,7 +52,7 @@ export class BmEngine {
         return this.wasmEngine;
     }
 
-    initLocalDevice(id: string, name: string, deviceType: string, address: string, unreliablePort: number, reliablePort: number) {
+    initLocalDevice(id: string, name: string, deviceType: DeviceType, address: string, unreliablePort: number, reliablePort: number) {
         try {
             this.engine.init_local_device(id, name, deviceType, address, unreliablePort, reliablePort);
         } catch (e) {
@@ -58,7 +68,7 @@ export class BmEngine {
     /// game for a scheme to fit it.
     configure(config: {
         server?: boolean;
-        endpoint?: 'Game' | 'Controller';
+        endpoint?: EndpointMode;
         opensSessions?: boolean;
         gyroscope?: boolean;
         orientation?: boolean;
@@ -86,7 +96,7 @@ export class BmEngine {
         return new FramerWasm(maxLen);
     }
 
-    peerReachable(id: string, name: string, deviceType: string, address: string, unreliablePort: number, reliablePort: number): BmOutgoing[] {
+    peerReachable(id: string, name: string, deviceType: DeviceType, address: string, unreliablePort: number, reliablePort: number): BmOutgoing[] {
         return this.emit({
             type: 'PeerReachable',
             device: {
@@ -156,7 +166,7 @@ export class BmEngine {
         return this.emit({
             type: 'ConfigureSensor',
             target: targetId,
-            sensor: 'Accel',
+            sensor: Sensor.Accel,
             enabled,
             intervalMs: interval ?? null,
         }).outgoings;
@@ -217,7 +227,7 @@ export class BmEngine {
 
     /// Sends a set the caller assembled itself, unbatched. For input that does
     /// not arrive as a pointer stream.
-    makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: number | string }>): BmOutgoing[] {
+    makeTouchSet(targetId: string, points: Array<{ id: number, x: number, y: number, screenWidth: number, screenHeight: number, state: TouchState }>): BmOutgoing[] {
         return this.emit({ type: 'SendTouch', target: targetId, touches: points }).outgoings;
     }
 

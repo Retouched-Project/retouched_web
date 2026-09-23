@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import { generate_device_id } from '../wasm/bronze_monkey';
+import { DeviceType, generate_device_id } from '../wasm/bronze_monkey';
 
 export class DeviceInfo {
     private static deviceId: string | null = null;
@@ -10,7 +10,7 @@ export class DeviceInfo {
     getDeviceId(): string { return DeviceInfo.getDeviceId(); }
     getAppId(): string { return DeviceInfo.getAppId(); }
     getDeviceName(): string { return DeviceInfo.getDeviceName(); }
-    getDeviceType(): string { return DeviceInfo.getDeviceType(); }
+    getDeviceType(): DeviceType { return DeviceInfo.getDeviceType(); }
 
     static getDeviceId(): string {
         if (!this.deviceId) {
@@ -33,10 +33,10 @@ export class DeviceInfo {
         return "Retouched Web";
     }
 
-    static getDeviceType(): string {
+    static getDeviceType(): DeviceType {
         const ua = navigator.userAgent;
-        if (/android/i.test(ua)) return 'Android';
-        if (/iphone|ipad|ipod/i.test(ua)) return 'IPhone';
-        return 'Palm';
+        if (/android/i.test(ua)) return DeviceType.Android;
+        if (/iphone|ipad|ipod/i.test(ua)) return DeviceType.IPhone;
+        return DeviceType.Palm;
     }
 }

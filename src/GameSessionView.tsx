@@ -5,7 +5,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import type { GameClient } from './gameClient';
 import type { GameClientState } from './gameClient';
 import type { SensorStatus } from './core/sensorProcessor';
-import type { ControlMode } from './types';
+import { ControlMode } from './wasm/bronze_monkey';
 import { KeyboardOverlay } from './KeyboardOverlay';
 import { NavOverlay } from './NavOverlay';
 import { WaitOverlay } from './WaitOverlay';
@@ -177,9 +177,9 @@ export const GameSessionView: React.FC<Props> = ({
     };
 
     const isLandscape = schemeLandscape && !whitelisted; // effective orientation
-    const navMode = controlMode === 'Navigation';
-    const waitMode = controlMode === 'Wait';
-    const portraitMode = navMode || waitMode || controlMode === 'Keyboard';
+    const navMode = controlMode === ControlMode.Nav;
+    const waitMode = controlMode === ControlMode.Wait;
+    const portraitMode = navMode || waitMode || controlMode === ControlMode.Text;
     const overlayRotate = forceRotate && !portraitMode;
     const sliderLandscape = isLandscape && !portraitMode;
     const sliderRightOffset = sliderLandscape ? 60 : 12;
@@ -267,7 +267,7 @@ export const GameSessionView: React.FC<Props> = ({
             lock?: (orientation: string) => Promise<void>;
             unlock?: () => void;
         };
-        if (controlMode && controlMode !== 'Gamepad') {
+        if (controlMode != null && controlMode !== ControlMode.Game) {
             so?.unlock?.();
         } else if (isLandscape) {
             so?.lock?.('landscape').catch(() => { });
@@ -331,8 +331,8 @@ export const GameSessionView: React.FC<Props> = ({
                 whitelisted={whitelisted}
             />
 
-            {/* KEYBOARD control mode: text input over the controls */}
-            {controlMode === 'Keyboard' && (
+            {/* TEXT control mode: keyboard input */}
+            {controlMode === ControlMode.Text && (
                 <KeyboardOverlay
                     key={startString}
                     initialText={startString}

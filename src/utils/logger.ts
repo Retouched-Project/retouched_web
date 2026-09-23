@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import { configure_logging, set_log_level, take_logs } from '../wasm/bronze_monkey';
+import { LogLevel as LibLevel, configure_logging, set_log_level, take_logs } from '../wasm/bronze_monkey';
 import { LOG_LEVELS, logStore, type LogEntry, type LogLevel } from './logStore';
 
 const LEVEL_RANK: Record<LogLevel, number> = {
@@ -46,7 +46,7 @@ export function setLogLevel(level: LogLevel) {
     currentLevel = level;
     localStorage.setItem(STORAGE_KEY, level);
     try {
-        set_log_level(LEVEL_RANK[level]);
+        set_log_level(LibLevel[level]);
     } catch {
         // The engine is not up yet; configureLibLogging applies the level on init.
     }
@@ -155,7 +155,7 @@ export function setupLogging() {
 // Installs the lib's log ring and starts draining it. Must run after the wasm
 // module is loaded, and early enough to catch what the engine logs on startup.
 export function configureLibLogging(capacity = LIB_RING_CAPACITY) {
-    configure_logging(LEVEL_RANK[currentLevel], capacity);
+    configure_logging(LibLevel[currentLevel], capacity);
     if (drainTimer !== null) return;
     drainTimer = window.setInterval(drainLibLogs, DRAIN_INTERVAL_MS);
 }
@@ -168,7 +168,7 @@ export function stopLibLogging() {
 
 interface LibLogRecord {
     seq: number | bigint;
-    level: string;
+    level: LibLevel;
     target: string;
     message: string;
 }
@@ -193,7 +193,8 @@ function drainLibLogs() {
 
     const batch: LogEntry[] = [];
     for (const r of records) {
-        const level = isLevel(r.level) ? r.level : 'Info';
+        const name = LibLevel[r.level];
+        const level = isLevel(name) ? name : 'Info';
         consoleFor(level)(`[${r.target}]`, r.message);
         batch.push({ time: new Date(), level, source: r.target, message: r.message });
     }

@@ -2,7 +2,15 @@
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
 import type { BmEngine } from '../../bmEngine';
-import { HandshakerWasm, PolicySnifferWasm, frame, policyResponse, type FramerWasm } from '../../wasm/bronze_monkey';
+import {
+    HandshakerWasm,
+    LinkRole,
+    PolicySnifferWasm,
+    VersionCheck,
+    frame,
+    policyResponse,
+    type FramerWasm,
+} from '../../wasm/bronze_monkey';
 import { WebRtcTransport } from '../webRtcTransport';
 import type { BmEvent, BmOutgoing, BmVia } from '../../types';
 import { createLogger } from '../../utils/logger';
@@ -37,23 +45,23 @@ export class ProtocolCoordinator {
 
     private handshakerFor(label: string): HandshakerWasm {
         if (label === 'registry') {
-            return (this.registryHandshakerInst ??= new HandshakerWasm(1));
+            return (this.registryHandshakerInst ??= new HandshakerWasm(LinkRole.Responder));
         }
-        return (this.gameHandshakerInst ??= new HandshakerWasm(1));
+        return (this.gameHandshakerInst ??= new HandshakerWasm(LinkRole.Responder));
     }
 
     /// Answers a version exchange, returning true when the message was one.
     handleHandshake(label: string, message: Uint8Array): boolean {
         const outcome = this.handshakerFor(label).onMessage(message) as
             | { type: 'Passthrough' }
-            | { type: 'Received'; check: string; reply: Uint8Array | null };
+            | { type: 'Received'; check: VersionCheck; reply: Uint8Array | null };
         if (outcome.type !== 'Received') return false;
 
         if (outcome.reply) {
             this.transport.send(label === 'registry' ? 'registry' : 'game', frame(outcome.reply));
         }
-        if (outcome.check !== 'Compatible') {
-            log.error(`${label} version is not compatible: ${outcome.check}`);
+        if (outcome.check !== VersionCheck.Compatible) {
+            log.error(`${label} version is not compatible: ${VersionCheck[outcome.check]}`);
         }
         return true;
     }

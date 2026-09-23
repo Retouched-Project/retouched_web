@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
+import type { BMReliability, ChannelType, ControlMode, DeviceType, TouchPhase } from './wasm/bronze_monkey';
+
 export interface BmAddress {
     address: string;
     unreliablePort: number;
@@ -10,7 +12,7 @@ export interface BmAddress {
 export interface BmDeviceCore {
     deviceId: string;
     deviceName: string;
-    deviceType: string;
+    deviceType: DeviceType;
     address: BmAddress | null;
 }
 
@@ -45,15 +47,11 @@ export interface BmArrival {
 
 export interface BmOutgoing {
     targetDeviceId: string;
-    channel: number;
-    reliability: number;
+    channel: ChannelType;
+    reliability: BMReliability;
     via: BmVia;
     payload: Uint8Array;
 }
-
-/// Stationary is absent on purpose: the engine reaches it once a set has gone,
-/// and a caller never observes it.
-export type BmTouchPhase = 'Began' | 'Moved' | 'Ended' | 'Cancelled';
 
 export type BmTouchEvent =
     | {
@@ -61,13 +59,11 @@ export type BmTouchEvent =
         id: number;
         x: number;
         y: number;
-        phase: BmTouchPhase;
+        phase: TouchPhase;
         screenWidth: number;
         screenHeight: number;
     }
     | { type: 'CancelAll' };
-
-export type ControlMode = 'Gamepad' | 'Keyboard' | 'Navigation' | 'Wait';
 
 export interface BmControlConfig {
     touchEnabled?: boolean | null;

@@ -4,6 +4,7 @@
 import type { BmEngine } from '../bmEngine';
 import { DeviceInfo } from './deviceInfo';
 import type { BmRegistryInfo } from '../types';
+import { DeviceType } from '../wasm/bronze_monkey';
 import { createLogger } from '../utils/logger';
 
 const log = createLogger('RegistryClient');
@@ -52,7 +53,7 @@ export class RegistryClient {
         try {
             this.engine.initLocalDevice(deviceId, deviceName, deviceType, host, 0, port);
 
-            this.engine.peerReachable('server', 'Registry', 'Server', host, 0, 8088);
+            this.engine.peerReachable('server', 'Registry', DeviceType.Server, host, 0, 8088);
 
             // The registry speaks first, so there is nothing to send here.
             await this.registerWithRegistry(deviceId, host, port, deviceName, deviceType);
@@ -61,7 +62,7 @@ export class RegistryClient {
         }
     }
 
-    private async registerWithRegistry(deviceId: string, host: string, port: number, deviceName: string, deviceType: string) {
+    private async registerWithRegistry(deviceId: string, host: string, port: number, deviceName: string, deviceType: DeviceType) {
         const registerPromise = new Promise<void>((resolve) => {
             this.registerResolve = resolve;
         });

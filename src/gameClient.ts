@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright(C) 2026 ddavef/KinteLiX retouched_web
 
-import type { BmEvent, BmControlConfig, BmRegistryInfo, BmTouchEvent, BmTouchPhase, ControlMode } from './types';
+import type { BmEvent, BmControlConfig, BmRegistryInfo, BmTouchEvent } from './types';
+import { EndpointMode, TouchPhase, type ControlMode } from './wasm/bronze_monkey';
 import { ControlScheme } from './bmrender/proto/scheme';
 import { isAccelerometerEnabled, isTouchEnabled } from './bmrender/proto/schemeExtensions';
 import { assetManager } from './bmrender/assetManager';
@@ -18,14 +19,7 @@ import { createLogger } from './utils/logger';
 
 const log = createLogger('GameClient');
 
-/// Stationary has no entry: the engine reaches it once a set has gone, and the
-/// renderer never reports it.
-const TOUCH_PHASES: Record<number, BmTouchPhase | undefined> = {
-    1: 'Began',
-    2: 'Moved',
-    4: 'Ended',
-    5: 'Cancelled',
-};
+const TOUCH_PHASES = new Set<number>([TouchPhase.Began, TouchPhase.Moved, TouchPhase.Ended, TouchPhase.Cancelled]);
 
 export interface GameClientState {
     connected: boolean;
@@ -233,7 +227,7 @@ export class GameClient {
     /// what is known and told again when the probe lands.
     private applySessionInputs(capabilities: number) {
         this.engine.configure({
-            endpoint: 'Controller',
+            endpoint: EndpointMode.Controller,
             gyroscope: (capabilities & 1) !== 0,
             orientation: (capabilities & 2) !== 0,
             screenWidth: window.innerWidth,
@@ -378,8 +372,8 @@ export class GameClient {
     }
 
     handleTouchEvent(touch: { id: number, x: number, y: number, state: number }, screenWidth: number, screenHeight: number) {
-        const phase = TOUCH_PHASES[touch.state];
-        if (!this.session.getActiveGame() || !phase) return;
+        if (!this.session.getActiveGame() || !TOUCH_PHASES.has(touch.state)) return;
+        const phase = touch.state as TouchPhase;
 
         this.touchQueue.push({ type: 'Pointer', id: touch.id, x: touch.x, y: touch.y, phase, screenWidth, screenHeight });
 
@@ -492,7 +486,7 @@ export class GameClient {
         if (!activeGame) return;
 
         if (cfg.controlMode != null) {
-            // startString is the keyboard's initial text; only KEYBOARD mode sends it.
+            // startString is the keyboard's initial text; only Text mode sends it.
             this.updateState({ controlMode: cfg.controlMode, startString: cfg.startString ?? '' });
         }
 
